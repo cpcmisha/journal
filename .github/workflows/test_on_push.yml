@@ -1,0 +1,60 @@
+name: Test on push or pull_request
+
+on: [ push, pull_request ]
+
+env:
+  APP_NAME: diary
+
+jobs:
+  unit_test:
+    environment: development
+    runs-on: ubuntu-latest
+    name: "Run unit tests"
+    strategy:
+      matrix:
+        php-versions: [ '8.0', '8.1', '8.2', '8.3' ]
+        nextcloud: [ 'stable25', 'stable27', 'stable28' ]
+        database: [ 'sqlite' ]
+        phpunit-version: [ '9.5' ]
+        exclude:
+          - php-versions: '8.2'
+            nextcloud: 'stable25'
+          - php-versions: '8.3'
+            nextcloud: 'stable25'
+          - php-versions: '8.3'
+            nextcloud: 'stable27'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: pdo_sqlite,pdo_mysql,pdo_pgsql,gd,zip
+          coverage: none
+
+      - name: Set up server with sqlite
+        uses: SMillerDev/nextcloud-actions/setup-nextcloud@main
+        with:
+          cron: false
+          version: ${{ matrix.nextcloud }}
+          database-type: ${{ matrix.database }}
+
+      - name: Configure server with app
+        uses: SMillerDev/nextcloud-actions/setup-nextcloud-app@main
+        with:
+          app: ${{ env.APP_NAME }}
+          check-code: false
+
+      - name: Run composer with dev env
+        run: |
+          cd ../server/apps/${{ env.APP_NAME }} && composer install
+
+      - name: Run unit tests
+        run: |
+          cd ../server/apps/${{ env.APP_NAME }} && vendor/bin/phpunit --testsuite unit
+
+      - name: Run integration tests
+        run: |
+          cd ../server/apps/${{ env.APP_NAME }} && vendor/bin/phpunit --testsuite integration

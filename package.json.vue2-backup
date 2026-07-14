@@ -1,0 +1,41 @@
+{
+  "name": "diary",
+  "version": "0.1.4",
+  "description": "A simple diary for the nextcloud",
+  "main": "js/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "webpack --node-env production --progress",
+    "dev": "webpack --node-env development --progress",
+    "watch": "webpack --node-env development --progress --watch",
+    "serve": "webpack --node-env development serve --progress",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Röhrig",
+  "license": "agpl",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@nextcloud/axios": "^2.5.1",
+    "@nextcloud/moment": "^1.3.2",
+    "@nextcloud/router": "^2.2.1",
+    "@nextcloud/vue": "^7.12.8",
+    "github-markdown-css": "^5.8.1",
+    "vue": "^2.7.16",
+    "codemirror": "5.65.19",
+    "vue-material-design-icons": "^5.3.1",
+    "vue-router": "^3.6.5",
+    "vue-simplemde": "^2.1.1"
+  },
+  "devDependencies": {
+    "@nextcloud/browserslist-config": "^3.0.1",
+    "@nextcloud/babel-config": "^1.2.0",
+    "@nextcloud/eslint-config": "^8.4.2",
+    "@nextcloud/stylelint-config": "^3.0.1",
+    "@nextcloud/webpack-vue-config": "^6.2.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

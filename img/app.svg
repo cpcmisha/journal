@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64">
+  <g fill="none"
+     stroke="#000"
+     stroke-width="5"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+
+    <!-- Cuaderno -->
+    <rect x="14" y="8" width="38" height="48" rx="5"/>
+
+    <!-- Lomo -->
+    <path d="M22 8v48"/>
+
+    <!-- Líneas interiores -->
+    <path d="M31 23h12"/>
+    <path d="M31 33h12"/>
+    <path d="M31 43h8"/>
+
+    <!-- Marcador -->
+    <path d="M42 8v14l5-4 5 4V8"/>
+  </g>
+</svg>
