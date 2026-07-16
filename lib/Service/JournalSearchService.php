@@ -57,6 +57,83 @@ final class JournalSearchService
     }
 
     /**
+     * Busca entradas que contienen un wikilink exacto al título indicado.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function findBacklinks(
+        string $uid,
+        string $title,
+        int $limit = 50
+    ): array {
+        $title = trim($title);
+        $limit = max(1, min($limit, 100));
+
+        if ($title === '') {
+            return [];
+        }
+
+        $normalizedTitle = $this->normalize($title);
+        $entries = $this->journalRepository->getAllEntries($uid);
+        $results = [];
+
+        foreach ($entries as $entry) {
+            $content = (string) (
+                $entry['entryContent'] ?? ''
+            );
+
+            $wikilinks = $this->extractWikiLinks($content);
+            $matchesTitle = false;
+
+            foreach ($wikilinks as $wikilink) {
+                if (
+                    $this->normalize($wikilink)
+                    === $normalizedTitle
+                ) {
+                    $matchesTitle = true;
+                    break;
+                }
+            }
+
+            if (!$matchesTitle) {
+                continue;
+            }
+
+            $results[] = [
+                'date' => (string) (
+                    $entry['entryDate'] ?? ''
+                ),
+                'title' => trim((string) (
+                    $entry['title'] ?? ''
+                )),
+                'excerpt' => $this->buildExcerpt(
+                    $content,
+                    $title
+                ),
+                'categories' => $this->normalizeList(
+                    $entry['categories'] ?? []
+                ),
+                'tags' => $this->normalizeList(
+                    $entry['tags'] ?? []
+                ),
+                'wikilinks' => $wikilinks,
+                'fileId' => $entry['fileId'] ?? null,
+                'filePath' => $entry['filePath'] ?? null,
+                'created' => $entry['created'] ?? null,
+                'updated' => $entry['updated'] ?? null,
+            ];
+        }
+
+        usort(
+            $results,
+            static fn (array $a, array $b): int =>
+                strcmp($b['date'], $a['date'])
+        );
+
+        return array_slice($results, 0, $limit);
+    }
+
+    /**
      * @param array<string,mixed> $entry
      *
      * @return array<string,mixed>|null
@@ -67,6 +144,7 @@ final class JournalSearchService
         string $normalizedQuery
     ): ?array {
         $date = (string) ($entry['entryDate'] ?? '');
+        $title = trim((string) ($entry['title'] ?? ''));
         $content = (string) ($entry['entryContent'] ?? '');
 
         $categories = $this->normalizeList(
@@ -79,6 +157,24 @@ final class JournalSearchService
 
         $score = 0;
         $matches = [];
+
+        if ($title !== '') {
+            $normalizedTitle = $this->normalize($title);
+
+            if ($normalizedTitle === $normalizedQuery) {
+                $score += 150;
+                $matches[] = 'title';
+            } elseif (
+                $normalizedQuery !== ''
+                && str_contains(
+                    $normalizedTitle,
+                    $normalizedQuery
+                )
+            ) {
+                $score += 105;
+                $matches[] = 'title';
+            }
+        }
 
         if ($this->normalize($date) === $normalizedQuery) {
             $score += 120;
@@ -181,6 +277,7 @@ final class JournalSearchService
 
         return [
             'date' => $date,
+            'title' => $title,
             'excerpt' => $this->buildExcerpt(
                 $content,
                 $originalQuery

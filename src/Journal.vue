@@ -35,7 +35,7 @@
 					<NcListItem
 						v-for="entry in filteredEntries"
 						:key="entry.date"
-						:name="formatDate(entry.date)"
+						:name="entry.title || formatDate(entry.date)"
 						:bold="false"
 						:compact="true"
 						counter-type="highlighted"
@@ -198,6 +198,25 @@
 
 					<div class="current-entry-heading">
 						<h3>{{ t('journalnotes', 'This entry') }}</h3>
+					</div>
+
+					<div class="organizer-section title-section">
+						<label for="journal-title">
+							{{ t('journalnotes', 'Title') }}
+						</label>
+
+						<input
+							id="journal-title"
+							v-model="noteTitle"
+							type="text"
+							maxlength="180"
+							:placeholder="t('journalnotes', 'Give this note a title')"
+							:disabled="!hasContent"
+							@input="scheduleMetadataSave">
+
+						<p class="organizer-help">
+							{{ t('journalnotes', 'Wikilinks use this title to identify the note.') }}
+						</p>
 					</div>
 
 					<div class="organizer-section">
@@ -397,6 +416,7 @@ export default {
 			activeTag: null,
 
 			currentEntryContent: '',
+			noteTitle: '',
 			categories: [],
 			categoryInput: '',
 			systemTagsCatalog: [],
@@ -755,6 +775,10 @@ export default {
 
 				const metadata = response.data.metadata || {}
 
+				this.noteTitle = typeof metadata.title === 'string'
+					? metadata.title.trim()
+					: ''
+
 				if (Array.isArray(metadata.categories)) {
 					this.categories = [...new Set(
 						metadata.categories
@@ -773,6 +797,7 @@ export default {
 				await this.fetchEntrySystemTags(this.date)
 			} catch (error) {
 				this.currentEntryContent = ''
+				this.noteTitle = ''
 				this.categories = []
 				this.categoryInput = ''
 				this.selectedSystemTags = []
@@ -1061,6 +1086,7 @@ export default {
 
 			const entryDate = this.date
 			const metadata = {
+				title: this.noteTitle.trim(),
 				categories: this.categories,
 				/*
 				 * Copia de búsqueda. La relación oficial se guarda
@@ -1089,6 +1115,7 @@ export default {
 				)
 
 				if (entry) {
+					entry.title = this.noteTitle.trim()
 					entry.categories = [...this.categories]
 					entry.tags = this.selectedSystemTags.map(
 						tag => tag.name,
