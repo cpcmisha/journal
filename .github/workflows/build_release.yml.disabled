@@ -1,3 +1,4 @@
+# Disabled until the journalnotes certificate is issued.
 name: Build and publish app release
 
 on:

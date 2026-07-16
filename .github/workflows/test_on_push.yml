@@ -1,60 +1,125 @@
-name: Test on push or pull_request
+name: Test Journal
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+permissions:
+  contents: read
 
 env:
-  APP_NAME: diary
+  APP_NAME: journalnotes
+  NEXTCLOUD_VERSION: stable34
 
 jobs:
-  unit_test:
-    environment: development
+  frontend:
+    name: Frontend build
     runs-on: ubuntu-latest
-    name: "Run unit tests"
-    strategy:
-      matrix:
-        php-versions: [ '8.0', '8.1', '8.2', '8.3' ]
-        nextcloud: [ 'stable25', 'stable27', 'stable28' ]
-        database: [ 'sqlite' ]
-        phpunit-version: [ '9.5' ]
-        exclude:
-          - php-versions: '8.2'
-            nextcloud: 'stable25'
-          - php-versions: '8.3'
-            nextcloud: 'stable25'
-          - php-versions: '8.3'
-            nextcloud: 'stable27'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+  php:
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - '8.2'
+          - '8.3'
+          - '8.4'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
-          extensions: pdo_sqlite,pdo_mysql,pdo_pgsql,gd,zip
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, xml, curl, zip, gd, sqlite3, pdo_sqlite
           coverage: none
+          tools: composer:v2
 
-      - name: Set up server with sqlite
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Audit Composer dependencies
+        run: composer audit --locked
+
+      - name: Validate PHP syntax
+        run: |
+          find appinfo lib templates tests \
+            -type f \
+            -name '*.php' \
+            -print0 \
+            | xargs -0 -n1 php -l
+
+  nextcloud:
+    name: Nextcloud 34 integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, curl, zip, gd, sqlite3, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Nextcloud
         uses: SMillerDev/nextcloud-actions/setup-nextcloud@main
         with:
           cron: false
-          version: ${{ matrix.nextcloud }}
-          database-type: ${{ matrix.database }}
+          version: ${{ env.NEXTCLOUD_VERSION }}
+          database-type: sqlite
 
-      - name: Configure server with app
+      - name: Configure Nextcloud with Journal
         uses: SMillerDev/nextcloud-actions/setup-nextcloud-app@main
         with:
           app: ${{ env.APP_NAME }}
           check-code: false
 
-      - name: Run composer with dev env
+      - name: Install app test dependencies
         run: |
-          cd ../server/apps/${{ env.APP_NAME }} && composer install
+          cd ../server/apps/${APP_NAME}
+          composer install --no-interaction --prefer-dist
 
       - name: Run unit tests
+        env:
+          NEXTCLOUD_SERVER_ROOT: ${{ github.workspace }}/../server
         run: |
-          cd ../server/apps/${{ env.APP_NAME }} && vendor/bin/phpunit --testsuite unit
+          cd ../server/apps/${APP_NAME}
+          vendor/bin/phpunit --testsuite unit
 
       - name: Run integration tests
+        env:
+          NEXTCLOUD_SERVER_ROOT: ${{ github.workspace }}/../server
         run: |
-          cd ../server/apps/${{ env.APP_NAME }} && vendor/bin/phpunit --testsuite integration
+          cd ../server/apps/${APP_NAME}
+          vendor/bin/phpunit --testsuite integration

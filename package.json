@@ -14,8 +14,12 @@
     "serve": "webpack --node-env development serve --progress",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Daniel Röhrig",
-  "license": "agpl",
+  "author": {
+    "name": "Miguel Torres",
+    "email": "miguel@misha.pe",
+    "url": "https://miguel.pe"
+  },
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@nextcloud/axios": "^2.5.1",
@@ -46,5 +50,9 @@
     "terser-webpack-plugin": "^5.6.1",
     "webpack": "^5.108.4",
     "webpack-cli": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=22 <25",
+    "npm": ">=10"
   }
 }
