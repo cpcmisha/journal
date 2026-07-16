@@ -38,14 +38,15 @@ class EntriesManipulationTest extends TestCase
         $entry->setUid($this->userId);
         $entry->setEntryDate($date);
         $entry->setEntryContent($content);
+        $entry->setEntryMetadata('{}');
 
         $this->mapper->insert($entry);
 
         /** @var DataResponse $response */
         $response = $this->controller->getEntry($date);
         $this->assertEquals(200, $response->getStatus());
-        /** @var Entry $data */
-        $data = $response->getData()->jsonSerialize();
+        /** @var array<string,mixed> $data */
+        $data = $response->getData();
         $this->assertEquals($date, $data['entryDate']);
         $this->assertEquals($content, $data['entryContent']);
         $this->assertEquals($this->userId, $data['uid']);
