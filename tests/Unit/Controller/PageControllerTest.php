@@ -16,6 +16,8 @@ use Psr\Log\LoggerInterface;
 use OCA\JournalNotes\Service\JournalFileService;
 use OCA\JournalNotes\Service\JournalRepository;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\SystemTag\ISystemTagManager;
+use OCP\SystemTag\ISystemTagObjectMapper;
 
 class PageControllerTest extends TestCase
 {
@@ -41,8 +43,20 @@ class PageControllerTest extends TestCase
             JournalFileService::class
         );
 
-        $journalRepository = $this->createMock(
-            JournalRepository::class
+        $tagManager = $this->createMock(
+            ISystemTagManager::class
+        );
+
+        $tagMapper = $this->createMock(
+            ISystemTagObjectMapper::class
+        );
+
+        $journalRepository = new JournalRepository(
+            $this->mapper,
+            $journalFileService,
+            $tagManager,
+            $tagMapper,
+            $logger
         );
 
         $this->controller = new PageController(
