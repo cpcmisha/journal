@@ -27,6 +27,9 @@ class PageControllerTest extends TestCase
     /** @var EntryMapper|MockObject */
     private $mapper;
 
+    /** @var JournalFileService|MockObject */
+    private $journalFileService;
+
     public function setUp(): void
     {
         $request = $this->getMockBuilder('OCP\IRequest')->getMock();
@@ -39,7 +42,7 @@ class PageControllerTest extends TestCase
 
         $dispatcher = $this->createMock(IEventDispatcher::class);
 
-        $journalFileService = $this->createMock(
+        $this->journalFileService = $this->createMock(
             JournalFileService::class
         );
 
@@ -53,7 +56,7 @@ class PageControllerTest extends TestCase
 
         $journalRepository = new JournalRepository(
             $this->mapper,
-            $journalFileService,
+            $this->journalFileService,
             $tagManager,
             $tagMapper,
             $logger
@@ -66,7 +69,7 @@ class PageControllerTest extends TestCase
             $this->mapper,
             $logger,
             $dispatcher,
-            $journalFileService,
+            $this->journalFileService,
             $journalRepository
         );
     }
@@ -90,8 +93,23 @@ class PageControllerTest extends TestCase
                 $this->equalTo($entryDate))
             ->will($this->returnValue($entry));
         $result = $this->controller->getEntry($entryDate);
-        $this->assertEquals(Http::STATUS_OK, $result->getStatus());
-        $this->assertEquals($entry, $result->getData());
+
+        $this->assertEquals(
+            Http::STATUS_OK,
+            $result->getStatus()
+        );
+
+        $data = $result->getData();
+
+        $this->assertIsArray($data);
+        $this->assertSame($this->userId, $data['uid']);
+        $this->assertSame($entryDate, $data['entryDate']);
+        $this->assertSame(
+            $entryContent,
+            $data['entryContent']
+        );
+        $this->assertSame([], $data['categories']);
+        $this->assertSame([], $data['tags']);
     }
 
     public function testNotFound()
@@ -124,28 +142,102 @@ class PageControllerTest extends TestCase
     {
         $entryDate = '2022-08-07';
         $entryContent = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam';
-        $entry = $this->createMockEntry($entryDate, $this->userId, $entryContent);
+        $entry = $this->createMockEntry(
+            $entryDate,
+            $this->userId,
+            $entryContent
+        );
+
         $this->mapper->expects($this->once())
-            ->method('insertOrUpdate')
-            ->with($this->equalTo($entry))
-            ->will($this->returnValue($entry));
-        $result = $this->controller->updateEntry($entryDate, $entryContent);
-        $this->assertEquals(Http::STATUS_OK, $result->getStatus());
-        $this->assertEquals($entry, $result->getData());
+            ->method('find')
+            ->with($this->userId, $entryDate)
+            ->willReturn($entry);
+
+        $this->journalFileService->expects($this->once())
+            ->method('write')
+            ->with(
+                $this->userId,
+                $entryDate,
+                $entryContent,
+                []
+            )
+            ->willReturn([
+                'fileId' => 123,
+                'filePath' => 'Journal/2022/08/2022-08-07.md',
+            ]);
+
+        $this->mapper->expects($this->once())
+            ->method('update')
+            ->with($this->isInstanceOf(Entry::class))
+            ->willReturn($entry);
+
+        $result = $this->controller->updateEntry(
+            $entryDate,
+            $entryContent
+        );
+
+        $this->assertEquals(
+            Http::STATUS_OK,
+            $result->getStatus()
+        );
+        $this->assertSame($entry, $result->getData());
+        $this->assertSame(123, $entry->getFileId());
+        $this->assertSame(
+            'Journal/2022/08/2022-08-07.md',
+            $entry->getFilePath()
+        );
     }
 
     public function testUpdateEntryFailure()
     {
         $entryDate = '2022-08-07';
         $entryContent = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam';
-        $entry = $this->createMockEntry($entryDate, $this->userId, $entryContent);
+        $entry = $this->createMockEntry(
+            $entryDate,
+            $this->userId,
+            $entryContent
+        );
+
         $this->mapper->expects($this->once())
-            ->method('insertOrUpdate')
-            ->with($this->equalTo($entry))
-            ->will($this->throwException(new \OCP\DB\Exception('Some error while updating')));
-        $result = $this->controller->updateEntry($entryDate, $entryContent);
-        $this->assertEquals(Http::STATUS_INTERNAL_SERVER_ERROR, $result->getStatus());
-        $this->assertEquals(['error' => 'Some error while updating'], $result->getData());
+            ->method('find')
+            ->with($this->userId, $entryDate)
+            ->willReturn($entry);
+
+        $this->journalFileService->expects($this->once())
+            ->method('write')
+            ->with(
+                $this->userId,
+                $entryDate,
+                $entryContent,
+                []
+            )
+            ->willReturn([
+                'fileId' => 123,
+                'filePath' => 'Journal/2022/08/2022-08-07.md',
+            ]);
+
+        $this->mapper->expects($this->once())
+            ->method('update')
+            ->with($this->isInstanceOf(Entry::class))
+            ->willThrowException(
+                new \OCP\DB\Exception(
+                    'Some error while updating'
+                )
+            );
+
+        $result = $this->controller->updateEntry(
+            $entryDate,
+            $entryContent
+        );
+
+        $this->assertEquals(
+            Http::STATUS_INTERNAL_SERVER_ERROR,
+            $result->getStatus()
+        );
+        $this->assertEquals(
+            ['error' => 'Some error while updating'],
+            $result->getData()
+        );
     }
 
     public function testUpdateEntryDeleteEmpty()
@@ -176,6 +268,7 @@ class PageControllerTest extends TestCase
         $entry->setUid($userId);
         $entry->setEntryDate($date);
         $entry->setEntryContent($content);
+        $entry->setEntryMetadata('{}');
 
         return $entry;
     }
