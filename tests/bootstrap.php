@@ -1,15 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 if (!defined('PHPUNIT_RUN')) {
     define('PHPUNIT_RUN', 1);
 }
 
-require_once __DIR__ . '/../../../lib/base.php';
+$serverRoot = getenv('NEXTCLOUD_SERVER_ROOT');
 
-// Fix for "Autoload path not allowed: .../tests/lib/testcase.php"
-\OC::$loader->addValidRoot(OC::$SERVERROOT . '/tests');
+if ($serverRoot === false || trim($serverRoot) === '') {
+    $serverRoot = dirname(__DIR__, 3);
+}
 
-// Fix for "Autoload path not allowed: .../diary/tests/testcase.php"
+$bootstrap = rtrim($serverRoot, '/').'/tests/bootstrap.php';
+
+if (!is_file($bootstrap)) {
+    throw new RuntimeException(
+        'Nextcloud test bootstrap not found at '.$bootstrap.'. '
+        .'Set NEXTCLOUD_SERVER_ROOT to a Nextcloud source checkout '
+        .'that includes tests/bootstrap.php.'
+    );
+}
+
+require_once $bootstrap;
+
 \OC_App::loadApp('journalnotes');
-
-OC_Hook::clear();

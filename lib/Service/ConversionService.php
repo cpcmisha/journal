@@ -70,9 +70,12 @@ class ConversionService
      */
     public function markdownToHTML(string $markdown): string
     {
-        $converter = new CommonMarkConverter();
+        $converter = new CommonMarkConverter([
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ]);
 
-        return $converter->convertToHtml($markdown);
+        return $converter->convert($markdown)->getContent();
     }
 
     /**

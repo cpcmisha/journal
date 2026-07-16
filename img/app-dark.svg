@@ -1,24 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 64 64">
-  <g fill="none"
-     stroke="#fff"
-     stroke-width="5"
-     stroke-linecap="round"
-     stroke-linejoin="round">
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox="0 0 128 128"
+	role="img"
+	aria-labelledby="title description">
+	<title id="title">Journal</title>
+	<desc id="description">A journal book with a writing feather</desc>
 
-    <!-- Cuaderno -->
-    <rect x="14" y="8" width="38" height="48" rx="5"/>
+	<defs>
+		<linearGradient id="bookGradient" x1="18" y1="12" x2="94" y2="112">
+			<stop offset="0" stop-color="#244b78"/>
+			<stop offset="1" stop-color="#102e52"/>
+		</linearGradient>
 
-    <!-- Lomo -->
-    <path d="M22 8v48"/>
+		<linearGradient id="featherGradient" x1="88" y1="36" x2="112" y2="102">
+			<stop offset="0" stop-color="#2eb5b0"/>
+			<stop offset="1" stop-color="#158b91"/>
+		</linearGradient>
+	</defs>
 
-    <!-- Líneas interiores -->
-    <path d="M31 23h12"/>
-    <path d="M31 33h12"/>
-    <path d="M31 43h8"/>
+	<!-- Book -->
+	<path
+		d="M20 14h65c8 0 14 6 14 14v70c0 9-7 16-16 16H28c-10 0-18-8-18-18V24c0-6 4-10 10-10z"
+		fill="url(#bookGradient)"/>
 
-    <!-- Marcador -->
-    <path d="M42 8v14l5-4 5 4V8"/>
-  </g>
+	<!-- Spine -->
+	<path
+		d="M28 14v82"
+		fill="none"
+		stroke="#ffffff"
+		stroke-width="5"
+		stroke-linecap="round"
+		opacity=".95"/>
+
+	<!-- Pages -->
+	<path
+		d="M21 94h67c7 0 11 4 11 10s-4 10-11 10H27c-9 0-15-5-15-11s4-9 9-9z"
+		fill="#ffffff"/>
+
+	<path
+		d="M30 101h56M30 108h51"
+		fill="none"
+		stroke="#17385e"
+		stroke-width="3"
+		stroke-linecap="round"/>
+
+	<!-- Letter J -->
+	<path
+		d="M54 35h27v6h-7v30c0 14-7 22-19 22-8 0-14-4-16-11l8-4c2 5 4 7 8 7 5 0 8-4 8-12V41h-9z"
+		fill="#ffffff"/>
+
+	<!-- Bookmark -->
+	<path
+		d="M29 94h17v27l-8.5-6-8.5 6z"
+		fill="#20a99f"/>
+
+	<!-- Feather -->
+	<path
+		d="M88 94c4-25 12-49 30-63 2 25-8 48-30 63z"
+		fill="url(#featherGradient)"
+		stroke="#ffffff"
+		stroke-width="3"
+		stroke-linejoin="round"/>
+
+	<path
+		d="M88 103c4-24 12-44 27-65M98 68l14-7M94 79l13-5"
+		fill="none"
+		stroke="#ffffff"
+		stroke-width="3"
+		stroke-linecap="round"/>
 </svg>

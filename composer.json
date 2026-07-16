@@ -17,7 +17,7 @@
         "autoloader-suffix": "JournalNotes"
     },
     "require": {
-        "league/commonmark": "1.6.7",
+        "league/commonmark": "^2.7",
         "dompdf/dompdf": "^3.1",
         "iio/libmergepdf": "^4.0"
     },
