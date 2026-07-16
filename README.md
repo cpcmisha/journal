@@ -488,7 +488,7 @@ Historical copyright notices remain documented in NOTICE.md.
 
 **Miguel Torres (Misha)**
 
-https://misha.pe
+https://miguel.pe
 
 GitHub:
 

@@ -22,7 +22,7 @@ Your content remains accessible as regular Markdown files inside your Nextcloud 
 ]]></description>
     <version>1.0.0</version>
     <licence>AGPL-3.0-or-later</licence>
-    <author mail="miguel@misha.pe" homepage="https://misha.pe/">Miguel Torres (Misha)</author>
+    <author mail="miguel@misha.pe" homepage="https://miguel.pe/">Miguel Torres</author>
     <namespace>JournalNotes</namespace>
     <category>office</category>
     <category>tools</category>
