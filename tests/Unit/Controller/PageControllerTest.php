@@ -13,6 +13,10 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
+use OCA\JournalNotes\Service\JournalFileService;
+use OCA\JournalNotes\Service\JournalRepository;
+use OCP\EventDispatcher\IEventDispatcher;
+
 class PageControllerTest extends TestCase
 {
     /** @var PageController */
@@ -31,8 +35,25 @@ class PageControllerTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
+        $dispatcher = $this->createMock(IEventDispatcher::class);
+
+        $journalFileService = $this->createMock(
+            JournalFileService::class
+        );
+
+        $journalRepository = $this->createMock(
+            JournalRepository::class
+        );
+
         $this->controller = new PageController(
-            'journalnotes', $request, $this->userId, $this->mapper, $logger
+            'journalnotes',
+            $request,
+            $this->userId,
+            $this->mapper,
+            $logger,
+            $dispatcher,
+            $journalFileService,
+            $journalRepository
         );
     }
 

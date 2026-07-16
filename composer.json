@@ -14,7 +14,10 @@
         "platform": {
             "php": "8.2"
         },
-        "autoloader-suffix": "JournalNotes"
+        "autoloader-suffix": "JournalNotes",
+        "audit": {
+            "abandoned": "report"
+        }
     },
     "require": {
         "league/commonmark": "^2.7",

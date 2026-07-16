@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-if (!defined('PHPUNIT_RUN')) {
-    define('PHPUNIT_RUN', 1);
-}
-
 $serverRoot = getenv('NEXTCLOUD_SERVER_ROOT');
 
 if ($serverRoot === false || trim($serverRoot) === '') {
