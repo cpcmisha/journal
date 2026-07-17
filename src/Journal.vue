@@ -339,61 +339,124 @@
 					</div>
 
 					<div
-						v-if="noteTitle.trim()"
-						class="organizer-section backlinks-section">
-						<div class="backlinks-heading">
+						v-if="hasContent"
+						class="organizer-section relations-section">
+						<div class="relations-heading">
 							<label>
-								{{ t('journalnotes', 'Links to this note') }}
+								{{ t('journalnotes', 'Relations') }}
 							</label>
 
 							<span
-								v-if="backlinksStatus === 'loaded'"
-								class="backlinks-count">
-								{{ visibleBacklinks.length }}
+								v-if="relationsStatus === 'loaded'"
+								class="relations-count">
+								{{
+									visibleOutgoingRelations.length
+										+ incomingRelations.length
+								}}
 							</span>
 						</div>
 
 						<p
-							v-if="backlinksStatus === 'loading'"
+							v-if="relationsStatus === 'loading'"
 							class="organizer-help">
-							{{ t('journalnotes', 'Loading backlinks…') }}
+							{{ t('journalnotes', 'Loading relations…') }}
 						</p>
 
 						<p
-							v-else-if="backlinksStatus === 'error'"
+							v-else-if="relationsStatus === 'error'"
 							class="organizer-help tag-error">
-							{{ t('journalnotes', 'Could not load backlinks.') }}
+							{{ t('journalnotes', 'Could not load relations.') }}
 						</p>
 
-						<p
-							v-else-if="backlinksStatus === 'loaded'
-								&& visibleBacklinks.length === 0"
-							class="organizer-help">
-							{{ t('journalnotes', 'No other entries link to this note yet.') }}
-						</p>
+						<template v-else-if="relationsStatus === 'loaded'">
+							<div class="relations-group">
+								<h4>
+									{{ t('journalnotes', 'Links from this note') }}
+								</h4>
 
-						<div
-							v-else-if="visibleBacklinks.length"
-							class="backlinks-list">
-							<button
-								v-for="backlink in visibleBacklinks"
-								:key="`${backlink.date}-${backlink.fileId || ''}`"
-								type="button"
-								class="backlink-item"
-								@click="onDateChange(backlink.date)">
-								<strong>
-									{{ backlink.title
-										|| formatDate(backlink.date) }}
-								</strong>
+								<p
+									v-if="visibleOutgoingRelations.length === 0"
+									class="organizer-help">
+									{{ t('journalnotes', 'This note does not link to other notes yet.') }}
+								</p>
 
-								<small
-									v-if="backlink.title">
-									{{ formatDate(backlink.date) }}
-								</small>
+								<div
+									v-else
+									class="relations-list">
+									<button
+										v-for="relation in visibleOutgoingRelations"
+										:key="`outgoing-${relation.title}`"
+										type="button"
+										class="relation-item"
+										:class="{
+											'relation-item--missing': !relation.exists,
+										}"
+										:disabled="!relation.exists"
+										@click="relation.exists
+											&& onDateChange(relation.date)">
+										<div class="relation-item__header">
+											<strong>{{ relation.title }}</strong>
 
-								<span>{{ backlink.excerpt }}</span>
-							</button>
-						</div>
+											<span
+												v-if="relation.exists"
+												class="relation-status relation-status--exists">
+												{{ t('journalnotes', 'Exists') }}
+											</span>
+
+											<span
+												v-else
+												class="relation-status relation-status--missing">
+												{{ t('journalnotes', 'Not created') }}
+											</span>
+										</div>
+
+										<small
+											v-if="relation.exists && relation.date">
+											{{ formatDate(relation.date) }}
+										</small>
+
+										<span
+											v-if="relation.excerpt">
+											{{ relation.excerpt }}
+										</span>
+									</button>
+								</div>
+							</div>
+
+							<div class="relations-group">
+								<h4>
+									{{ t('journalnotes', 'Links to this note') }}
+								</h4>
+
+								<p
+									v-if="incomingRelations.length === 0"
+									class="organizer-help">
+									{{ t('journalnotes', 'No other entries link to this note yet.') }}
+								</p>
+
+								<div
+									v-else
+									class="relations-list">
+									<button
+										v-for="relation in incomingRelations"
+										:key="`incoming-${relation.date}-${relation.fileId || ''}`"
+										type="button"
+										class="relation-item"
+										@click="onDateChange(relation.date)">
+										<strong>
+											{{ relation.title
+												|| formatDate(relation.date) }}
+										</strong>
+
+										<small v-if="relation.title">
+											{{ formatDate(relation.date) }}
+										</small>
+
+										<span>{{ relation.excerpt }}</span>
+									</button>
+								</div>
+							</div>
+						</template>
 					</div>
 
 					<div
@@ -485,9 +548,12 @@ export default {
 			metadataStatus: null,
 			metadataTimeout: null,
 
-			backlinks: [],
-			backlinksStatus: null,
-			backlinksRequestId: 0,
+			relations: {
+				outgoing: [],
+				incoming: [],
+			},
+			relationsStatus: null,
+			relationsRequestId: 0,
 
 			categorySuggestions: [
 				t('journalnotes', 'Personal'),
@@ -651,10 +717,29 @@ export default {
 			)
 		},
 
-		visibleBacklinks() {
-			return this.backlinks.filter(
-				entry => entry.date !== this.date,
+		outgoingRelations() {
+			return Array.isArray(this.relations.outgoing)
+				? this.relations.outgoing
+				: []
+		},
+
+		incomingRelations() {
+			return Array.isArray(this.relations.incoming)
+				? this.relations.incoming.filter(
+					entry => entry.date !== this.date,
+				)
+				: []
+		},
+
+		visibleOutgoingRelations() {
+			return this.outgoingRelations.filter(
+				relation => relation.date !== this.date,
 			)
+		},
+
+		hasRelations() {
+			return this.visibleOutgoingRelations.length > 0
+				|| this.incomingRelations.length > 0
 		},
 
 		hasContent() {
@@ -863,10 +948,7 @@ export default {
 				}
 
 				await this.fetchEntrySystemTags(this.date)
-				await this.fetchBacklinks(
-					this.noteTitle,
-					this.date,
-				)
+				await this.fetchRelations(this.date)
 			} catch (error) {
 				this.currentEntryContent = ''
 				this.noteTitle = ''
@@ -884,53 +966,64 @@ export default {
 			}
 		},
 
-		async fetchBacklinks(title, entryDate = this.date) {
-			const normalizedTitle = String(title || '').trim()
-			const requestId = ++this.backlinksRequestId
+		async fetchRelations(entryDate = this.date) {
+			const requestId = ++this.relationsRequestId
 
-			if (!normalizedTitle) {
-				this.backlinks = []
-				this.backlinksStatus = null
+			if (!entryDate) {
+				this.relations = {
+					outgoing: [],
+					incoming: [],
+				}
+				this.relationsStatus = null
 				return
 			}
 
-			this.backlinksStatus = 'loading'
+			this.relationsStatus = 'loading'
 
 			try {
 				const response = await axios.get(
-					generateUrl('apps/journalnotes/backlinks'),
+					generateUrl('apps/journalnotes/relations'),
 					{
 						params: {
-							title: normalizedTitle,
+							date: entryDate,
 							limit: 100,
 						},
 					},
 				)
 
 				if (
-					requestId !== this.backlinksRequestId
+					requestId !== this.relationsRequestId
 					|| entryDate !== this.date
-					|| normalizedTitle !== this.noteTitle.trim()
 				) {
 					return
 				}
 
-				this.backlinks = Array.isArray(response.data)
-					? response.data
-					: []
+				const data = response.data || {}
 
-				this.backlinksStatus = 'loaded'
+				this.relations = {
+					outgoing: Array.isArray(data.outgoing)
+						? data.outgoing
+						: [],
+					incoming: Array.isArray(data.incoming)
+						? data.incoming
+						: [],
+				}
+
+				this.relationsStatus = 'loaded'
 			} catch (error) {
-				if (requestId !== this.backlinksRequestId) {
+				if (requestId !== this.relationsRequestId) {
 					return
 				}
 
-				this.backlinks = []
-				this.backlinksStatus = 'error'
+				this.relations = {
+					outgoing: [],
+					incoming: [],
+				}
+				this.relationsStatus = 'error'
 
 				// eslint-disable-next-line no-console
 				console.error(
-					t('journalnotes', 'Could not load backlinks'),
+					t('journalnotes', 'Could not load relations'),
 					error,
 				)
 			}
@@ -1236,10 +1329,7 @@ export default {
 
 				this.metadataStatus = 'saved'
 
-				await this.fetchBacklinks(
-					this.noteTitle,
-					entryDate,
-				)
+				await this.fetchRelations(entryDate)
 
 				const entry = this.lastEntries.find(
 					item => item.date === entryDate,
@@ -1641,14 +1731,14 @@ export default {
 }
 
 
-.backlinks-heading {
+.relations-heading {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
 }
 
-.backlinks-count {
+.relations-count {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -1662,14 +1752,28 @@ export default {
 	font-weight: 600;
 }
 
-.backlinks-list {
+.relations-group {
+	margin-top: 14px;
+}
+
+.relations-group:first-of-type {
+	margin-top: 10px;
+}
+
+.relations-group h4 {
+	margin: 0 0 8px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.relations-list {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	margin-top: 8px;
 }
 
-.backlink-item {
+.relation-item {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
@@ -1683,22 +1787,39 @@ export default {
 	cursor: pointer;
 }
 
-.backlink-item:hover,
-.backlink-item:focus-visible {
+.relation-item:hover,
+.relation-item:focus-visible {
 	border-color: var(--color-primary-element);
 	background: var(--color-background-hover);
 }
 
-.backlink-item strong {
+.relation-item:disabled {
+	cursor: default;
+	opacity: 1;
+}
+
+.relation-item--missing {
+	border-style: dashed;
+}
+
+.relation-item__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	gap: 8px;
+}
+
+.relation-item strong {
 	font-size: 14px;
 }
 
-.backlink-item small {
+.relation-item small {
 	margin-top: 2px;
 	color: var(--color-text-maxcontrast);
 }
 
-.backlink-item span {
+.relation-item > span:not(.relation-status) {
 	display: -webkit-box;
 	margin-top: 6px;
 	overflow: hidden;
@@ -1707,6 +1828,20 @@ export default {
 	line-height: 1.35;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 3;
+}
+
+.relation-status {
+	flex-shrink: 0;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.relation-status--exists {
+	color: var(--color-success);
+}
+
+.relation-status--missing {
+	color: var(--color-text-maxcontrast);
 }
 
 </style>
