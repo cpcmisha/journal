@@ -12,6 +12,89 @@ final class JournalRelationsService
     }
 
     /**
+     * Resuelve un título explícito a las entradas que lo utilizan.
+     *
+     * @return array{
+     *     title:string,
+     *     status:string,
+     *     matches:array<int,array<string,mixed>>
+     * }
+     */
+    public function resolveTitle(
+        string $uid,
+        string $title
+    ): array {
+        $title = preg_replace(
+            '/\\s+/u',
+            ' ',
+            trim($title)
+        ) ?? trim($title);
+
+        if ($title === '') {
+            return [
+                'title' => '',
+                'status' => 'not_found',
+                'matches' => [],
+            ];
+        }
+
+        $normalizedTitle = $this->normalize($title);
+        $matches = [];
+
+        foreach (
+            $this->journalRepository->getAllEntries($uid)
+            as $entry
+        ) {
+            $entryTitle = trim((string) (
+                $entry['title'] ?? ''
+            ));
+
+            if (
+                $entryTitle === ''
+                || $this->normalize($entryTitle)
+                    !== $normalizedTitle
+            ) {
+                continue;
+            }
+
+            $matches[] = [
+                'title' => $entryTitle,
+                'date' => (string) (
+                    $entry['entryDate'] ?? ''
+                ),
+                'excerpt' => $this->buildExcerpt(
+                    (string) (
+                        $entry['entryContent'] ?? ''
+                    )
+                ),
+                'fileId' => $entry['fileId'] ?? null,
+                'filePath' => $entry['filePath'] ?? null,
+                'created' => $entry['created'] ?? null,
+                'updated' => $entry['updated'] ?? null,
+            ];
+        }
+
+        usort(
+            $matches,
+            static fn (array $a, array $b): int =>
+                strcmp(
+                    (string) ($b['date'] ?? ''),
+                    (string) ($a['date'] ?? '')
+                )
+        );
+
+        return [
+            'title' => $title,
+            'status' => match (count($matches)) {
+                0 => 'not_found',
+                1 => 'found',
+                default => 'multiple',
+            },
+            'matches' => $matches,
+        ];
+    }
+
+    /**
      * Devuelve las relaciones explícitas de una entrada.
      *
      * @return array{

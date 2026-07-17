@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\JournalNotes\AppInfo;
 
+use OCA\JournalNotes\Dashboard\JournalDashboardWidget;
 use OCA\JournalNotes\Listener\UserDeletedListener;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -27,6 +28,10 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             UserDeletedEvent::class,
             UserDeletedListener::class
+        );
+
+        $context->registerDashboardWidget(
+            JournalDashboardWidget::class
         );
     }
 

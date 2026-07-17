@@ -20,6 +20,13 @@ final class JournalDashboardWidget implements
     IButtonWidget,
     IIconWidget
 {
+    /**
+     * El Dashboard tiene una altura limitada.
+     * Reservamos espacio para el aviso de hoy y el botón principal.
+     */
+    /**
+     * Reservamos espacio para el estado de hoy y el botón principal.
+     */
     private const DEFAULT_LIMIT = 5;
     private const MAX_LIMIT = 7;
 
@@ -130,11 +137,7 @@ final class JournalDashboardWidget implements
             $this->l10n->t(
                 'You have not written any Journal entries yet.'
             ),
-            $todayEntry === null
-                ? $this->l10n->t(
-                    'You have not written today yet.'
-                )
-                : ''
+            ''
         );
     }
 

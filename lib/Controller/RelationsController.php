@@ -22,6 +22,49 @@ final class RelationsController extends Controller
     }
 
     /**
+     * Resuelve un título de nota a una o varias fechas.
+     *
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function resolveNote(
+        string $title = ''
+    ): DataResponse {
+        if ($this->UserId === null) {
+            return new DataResponse(
+                ['error' => 'User not authenticated'],
+                Http::STATUS_UNAUTHORIZED
+            );
+        }
+
+        $title = trim($title);
+
+        if ($title === '') {
+            return new DataResponse(
+                [
+                    'title' => '',
+                    'status' => 'not_found',
+                    'matches' => [],
+                ]
+            );
+        }
+
+        try {
+            return new DataResponse(
+                $this->journalRelationsService->resolveTitle(
+                    $this->UserId,
+                    $title
+                )
+            );
+        } catch (\Throwable $e) {
+            return new DataResponse(
+                ['error' => $e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
      * Devuelve los enlaces salientes y entrantes de una entrada.
      *
      * @NoAdminRequired

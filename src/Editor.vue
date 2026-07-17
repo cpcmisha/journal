@@ -12,6 +12,13 @@
 			</span>
 		</div>
 
+		<div
+			v-if="linkNotice"
+			class="link-notice"
+			role="status">
+			{{ linkNotice }}
+		</div>
+
 		<!-- La clave obliga a Vue a crear un contenedor nuevo por fecha. -->
 		<div
 			v-if="textAvailable"
@@ -61,6 +68,9 @@ export default {
 			saveArmed: false,
 			loadSequence: 0,
 			editorKey: 0,
+			editorClickHandler: null,
+			linkNotice: '',
+			linkNoticeTimeout: null,
 		}
 	},
 
@@ -98,6 +108,7 @@ export default {
 
 	beforeUnmount() {
 		clearTimeout(this.saveTimeout)
+		clearTimeout(this.linkNoticeTimeout)
 		this.destroyEditor()
 	},
 
@@ -110,6 +121,9 @@ export default {
 			this.saveArmed = false
 			this.unsavedChanges = false
 			this.status = 'loading'
+			this.linkNotice = ''
+			clearTimeout(this.linkNoticeTimeout)
+			this.linkNoticeTimeout = null
 
 			await this.destroyEditor()
 
@@ -200,6 +214,23 @@ export default {
 				 */
 				this.editor = markRaw(editor)
 
+				this.editorClickHandler = event => {
+					this.handleEditorClick(event)
+				}
+
+				// eslint-disable-next-line no-console
+				console.log(
+					'Journal wikilink listener registered',
+					entryDate,
+					element,
+				)
+
+				element.addEventListener(
+					'pointerdown',
+					this.editorClickHandler,
+					true,
+				)
+
 				const finishLoading = () => {
 					if (sequence !== this.loadSequence) {
 						return
@@ -233,6 +264,140 @@ export default {
 				this.isSettingContent = false
 				this.status = 'error'
 			}
+		},
+
+		async handleEditorClick(event) {
+			const link = event.target?.closest?.('a')
+
+			if (
+				event.button !== undefined
+				&& event.button !== 0
+			) {
+				return
+			}
+
+			if (!link || !this.$refs.textEditor?.contains(link)) {
+				return
+			}
+
+			const isWikiLink = link.getAttribute('iswikilink') === 'true'
+				|| link.hasAttribute('iswikilink')
+
+			if (!isWikiLink) {
+				return
+			}
+
+			/*
+			 * Nextcloud Text guarda el título original del wikilink
+			 * en data-md-href. El atributo href puede ser relativo.
+			 */
+			const linkedTitle = String(
+				link.getAttribute('data-md-href')
+					|| link.getAttribute('href')
+					|| link.textContent
+					|| '',
+			).trim()
+
+			if (!linkedTitle) {
+				return
+			}
+
+			/*
+			 * Debemos detener el clic antes de que Nextcloud Text abra
+			 * su ventana flotante de enlaces.
+			 */
+			event.preventDefault()
+			event.stopPropagation()
+			event.stopImmediatePropagation?.()
+
+			try {
+				const response = await axios.get(
+					generateUrl('apps/journalnotes/resolve-note'),
+					{
+						params: {
+							title: linkedTitle,
+						},
+					},
+				)
+
+				const data = response.data || {}
+				const matches = Array.isArray(data.matches)
+					? data.matches
+					: []
+
+				if (
+					data.status === 'found'
+					&& matches.length === 1
+					&& matches[0]?.date
+				) {
+					const targetDate = matches[0].date
+
+					/*
+					 * Una autorreferencia no necesita recargar la entrada.
+					 */
+					if (targetDate === this.date) {
+						this.showJournalNotice(
+							t(
+								'journalnotes',
+								'You are already viewing this note.',
+							),
+						)
+						return
+					}
+
+					await this.$router.push({
+						name: 'date',
+						params: {
+							date: targetDate,
+						},
+					})
+					return
+				}
+
+				if (data.status === 'multiple') {
+					this.showJournalNotice(
+						t(
+							'journalnotes',
+							'Several notes use this title. Select a date from Relations.',
+						),
+					)
+					return
+				}
+
+				this.showJournalNotice(
+					t(
+						'journalnotes',
+						'This linked note has not been created yet.',
+					),
+				)
+			} catch (error) {
+				// eslint-disable-next-line no-console
+				console.error(
+					t(
+						'journalnotes',
+						'Could not resolve the linked note',
+					),
+					error,
+				)
+
+				this.showJournalNotice(
+					t(
+						'journalnotes',
+						'Could not open the linked note.',
+					),
+				)
+			}
+		},
+
+		showJournalNotice(message) {
+			clearTimeout(this.linkNoticeTimeout)
+
+			this.linkNotice = String(message || '')
+
+			this.linkNoticeTimeout = window.setTimeout(() => {
+				this.linkNotice = ''
+				this.linkNoticeTimeout = null
+			}, 5000)
 		},
 
 		handleUpdate(entryDate, markdown) {
@@ -299,6 +464,18 @@ export default {
 			clearTimeout(this.saveTimeout)
 			this.saveTimeout = null
 
+			const element = this.$refs.textEditor
+
+			if (element && this.editorClickHandler) {
+				element.removeEventListener(
+					'pointerdown',
+					this.editorClickHandler,
+					true,
+				)
+			}
+
+			this.editorClickHandler = null
+
 			const oldEditor = this.editor
 			this.editor = null
 
@@ -316,8 +493,6 @@ export default {
 					)
 				}
 			}
-
-			const element = this.$refs.textEditor
 
 			if (element) {
 				element.replaceChildren()
@@ -444,6 +619,16 @@ export default {
 #diary-editor .text-editor .ProseMirror {
 	padding-right: 40px !important;
 	padding-left: 40px !important;
+}
+
+.link-notice {
+	margin: 8px 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
+	font-size: 14px;
 }
 
 </style>

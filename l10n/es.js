@@ -46,5 +46,10 @@ OC.L10N.register(
     "Could not search Journal entries": "No se pudieron buscar las entradas de Journal",
     "result": "resultado",
     "results": "resultados"
+	"This linked note has not been created yet." : "Esta nota enlazada todavía no ha sido creada.",
+	"You are already viewing this note." : "Ya estás viendo esta nota.",
+	"Could not open the linked note." : "No se pudo abrir la nota enlazada.",
+	"Several notes use this title. Select a date from Relations." : "Varias notas usan este título. Selecciona una fecha desde Relaciones.",
+
 },
 "nplurals=2; plural=(n != 1);");

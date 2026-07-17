@@ -21,6 +21,7 @@ return [
         ['name' => 'search#search', 'url' => '/search', 'verb' => 'GET'],
         ['name' => 'search#backlinks', 'url' => '/backlinks', 'verb' => 'GET'],
         ['name' => 'relations#get_relations', 'url' => '/relations', 'verb' => 'GET'],
+        ['name' => 'relations#resolve_note', 'url' => '/resolve-note', 'verb' => 'GET'],
         ['name' => 'export#get_markdown', 'url' => '/export/markdown', 'verb' => 'GET'],
         ['name' => 'export#get_pdf', 'url' => '/export/pdf', 'verb' => 'GET'],
     ]
