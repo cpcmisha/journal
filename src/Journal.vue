@@ -339,6 +339,64 @@
 					</div>
 
 					<div
+						v-if="noteTitle.trim()"
+						class="organizer-section backlinks-section">
+						<div class="backlinks-heading">
+							<label>
+								{{ t('journalnotes', 'Links to this note') }}
+							</label>
+
+							<span
+								v-if="backlinksStatus === 'loaded'"
+								class="backlinks-count">
+								{{ visibleBacklinks.length }}
+							</span>
+						</div>
+
+						<p
+							v-if="backlinksStatus === 'loading'"
+							class="organizer-help">
+							{{ t('journalnotes', 'Loading backlinks…') }}
+						</p>
+
+						<p
+							v-else-if="backlinksStatus === 'error'"
+							class="organizer-help tag-error">
+							{{ t('journalnotes', 'Could not load backlinks.') }}
+						</p>
+
+						<p
+							v-else-if="backlinksStatus === 'loaded'
+								&& visibleBacklinks.length === 0"
+							class="organizer-help">
+							{{ t('journalnotes', 'No other entries link to this note yet.') }}
+						</p>
+
+						<div
+							v-else-if="visibleBacklinks.length"
+							class="backlinks-list">
+							<button
+								v-for="backlink in visibleBacklinks"
+								:key="`${backlink.date}-${backlink.fileId || ''}`"
+								type="button"
+								class="backlink-item"
+								@click="onDateChange(backlink.date)">
+								<strong>
+									{{ backlink.title
+										|| formatDate(backlink.date) }}
+								</strong>
+
+								<small
+									v-if="backlink.title">
+									{{ formatDate(backlink.date) }}
+								</small>
+
+								<span>{{ backlink.excerpt }}</span>
+							</button>
+						</div>
+					</div>
+
+					<div
 						v-if="!hasContent"
 						class="empty-metadata-notice">
 						{{ t('journalnotes', 'Write and save the entry before assigning categories and tags.') }}
@@ -426,6 +484,10 @@ export default {
 			systemTagStatus: null,
 			metadataStatus: null,
 			metadataTimeout: null,
+
+			backlinks: [],
+			backlinksStatus: null,
+			backlinksRequestId: 0,
 
 			categorySuggestions: [
 				t('journalnotes', 'Personal'),
@@ -586,6 +648,12 @@ export default {
 				this.searchQuery
 				|| this.activeCategory
 				|| this.activeTag,
+			)
+		},
+
+		visibleBacklinks() {
+			return this.backlinks.filter(
+				entry => entry.date !== this.date,
 			)
 		},
 
@@ -795,16 +863,74 @@ export default {
 				}
 
 				await this.fetchEntrySystemTags(this.date)
+				await this.fetchBacklinks(
+					this.noteTitle,
+					this.date,
+				)
 			} catch (error) {
 				this.currentEntryContent = ''
 				this.noteTitle = ''
 				this.categories = []
 				this.categoryInput = ''
 				this.selectedSystemTags = []
+				this.backlinks = []
+				this.backlinksStatus = null
 
 				// eslint-disable-next-line no-console
 				console.error(
 					t('journalnotes', 'Could not load the entry organization'),
+					error,
+				)
+			}
+		},
+
+		async fetchBacklinks(title, entryDate = this.date) {
+			const normalizedTitle = String(title || '').trim()
+			const requestId = ++this.backlinksRequestId
+
+			if (!normalizedTitle) {
+				this.backlinks = []
+				this.backlinksStatus = null
+				return
+			}
+
+			this.backlinksStatus = 'loading'
+
+			try {
+				const response = await axios.get(
+					generateUrl('apps/journalnotes/backlinks'),
+					{
+						params: {
+							title: normalizedTitle,
+							limit: 100,
+						},
+					},
+				)
+
+				if (
+					requestId !== this.backlinksRequestId
+					|| entryDate !== this.date
+					|| normalizedTitle !== this.noteTitle.trim()
+				) {
+					return
+				}
+
+				this.backlinks = Array.isArray(response.data)
+					? response.data
+					: []
+
+				this.backlinksStatus = 'loaded'
+			} catch (error) {
+				if (requestId !== this.backlinksRequestId) {
+					return
+				}
+
+				this.backlinks = []
+				this.backlinksStatus = 'error'
+
+				// eslint-disable-next-line no-console
+				console.error(
+					t('journalnotes', 'Could not load backlinks'),
 					error,
 				)
 			}
@@ -1109,6 +1235,11 @@ export default {
 				}
 
 				this.metadataStatus = 'saved'
+
+				await this.fetchBacklinks(
+					this.noteTitle,
+					entryDate,
+				)
 
 				const entry = this.lastEntries.find(
 					item => item.date === entryDate,
@@ -1507,6 +1638,75 @@ export default {
 	&.error {
 		color: var(--color-error);
 	}
+}
+
+
+.backlinks-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.backlinks-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	height: 24px;
+	padding: 0 7px;
+	border-radius: 12px;
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.backlinks-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.backlink-item {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	width: 100%;
+	padding: 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+	text-align: left;
+	cursor: pointer;
+}
+
+.backlink-item:hover,
+.backlink-item:focus-visible {
+	border-color: var(--color-primary-element);
+	background: var(--color-background-hover);
+}
+
+.backlink-item strong {
+	font-size: 14px;
+}
+
+.backlink-item small {
+	margin-top: 2px;
+	color: var(--color-text-maxcontrast);
+}
+
+.backlink-item span {
+	display: -webkit-box;
+	margin-top: 6px;
+	overflow: hidden;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	line-height: 1.35;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
 }
 
 </style>

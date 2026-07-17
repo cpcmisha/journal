@@ -19,6 +19,7 @@ return [
         ['name' => 'system_tag#get_entry_tags', 'url' => '/entry/{date}/system-tags', 'verb' => 'GET'],
         ['name' => 'system_tag#update_entry_tags', 'url' => '/entry/{date}/system-tags', 'verb' => 'PUT'],
         ['name' => 'search#search', 'url' => '/search', 'verb' => 'GET'],
+        ['name' => 'search#backlinks', 'url' => '/backlinks', 'verb' => 'GET'],
         ['name' => 'export#get_markdown', 'url' => '/export/markdown', 'verb' => 'GET'],
         ['name' => 'export#get_pdf', 'url' => '/export/pdf', 'verb' => 'GET'],
     ]

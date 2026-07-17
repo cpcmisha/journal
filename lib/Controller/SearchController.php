@@ -59,4 +59,44 @@ final class SearchController extends Controller
             );
         }
     }
+
+    /**
+     * Devuelve las entradas que enlazan al título indicado.
+     *
+     * @NoAdminRequired
+     * @NoCSRFRequired
+     */
+    public function backlinks(
+        string $title = '',
+        int $limit = 50
+    ): DataResponse {
+        if ($this->UserId === null) {
+            return new DataResponse(
+                ['error' => 'User not authenticated'],
+                Http::STATUS_UNAUTHORIZED
+            );
+        }
+
+        $title = trim($title);
+
+        if ($title === '') {
+            return new DataResponse([]);
+        }
+
+        try {
+            return new DataResponse(
+                $this->journalSearchService->findBacklinks(
+                    $this->UserId,
+                    $title,
+                    $limit
+                )
+            );
+        } catch (\Throwable $e) {
+            return new DataResponse(
+                ['error' => $e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
 }
