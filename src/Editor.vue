@@ -16,7 +16,37 @@
 			v-if="linkNotice"
 			class="link-notice"
 			role="status">
-			{{ linkNotice }}
+			<span>{{ linkNotice }}</span>
+
+			<div
+				v-if="pendingLinkedTitle"
+				class="link-notice__actions">
+				<input
+					v-model="linkedNoteDate"
+					type="date"
+					class="link-notice__date"
+					:max="today"
+					:aria-label="t('journalnotes', 'Date for the new linked note')">
+
+				<button
+					type="button"
+					class="primary"
+					:disabled="creatingLinkedNote"
+					@click="createLinkedNote">
+					{{
+						creatingLinkedNote
+							? t('journalnotes', 'Creating note…')
+							: t('journalnotes', 'Create note')
+					}}
+				</button>
+
+				<button
+					type="button"
+					:disabled="creatingLinkedNote"
+					@click="dismissLinkNotice">
+					{{ t('journalnotes', 'Cancel') }}
+				</button>
+			</div>
 		</div>
 
 		<!-- La clave obliga a Vue a crear un contenedor nuevo por fecha. -->
@@ -71,10 +101,17 @@ export default {
 			editorClickHandler: null,
 			linkNotice: '',
 			linkNoticeTimeout: null,
+			pendingLinkedTitle: '',
+			linkedNoteDate: moment().format('YYYY-MM-DD'),
+			creatingLinkedNote: false,
 		}
 	},
 
 	computed: {
+		today() {
+			return moment().format('YYYY-MM-DD')
+		},
+
 		title() {
 			const day = moment(this.date)
 			return `${day.format('dddd')} - ${day.format('LL')}`
@@ -121,9 +158,8 @@ export default {
 			this.saveArmed = false
 			this.unsavedChanges = false
 			this.status = 'loading'
-			this.linkNotice = ''
-			clearTimeout(this.linkNoticeTimeout)
-			this.linkNoticeTimeout = null
+			this.dismissLinkNotice()
+			this.linkedNoteDate = this.today
 
 			await this.destroyEditor()
 
@@ -217,13 +253,6 @@ export default {
 				this.editorClickHandler = event => {
 					this.handleEditorClick(event)
 				}
-
-				// eslint-disable-next-line no-console
-				console.log(
-					'Journal wikilink listener registered',
-					entryDate,
-					element,
-				)
 
 				element.addEventListener(
 					'pointerdown',
@@ -364,12 +393,7 @@ export default {
 					return
 				}
 
-				this.showJournalNotice(
-					t(
-						'journalnotes',
-						'This linked note has not been created yet.',
-					),
-				)
+				this.showCreateLinkedNote(linkedTitle)
 			} catch (error) {
 				// eslint-disable-next-line no-console
 				console.error(
@@ -389,15 +413,130 @@ export default {
 			}
 		},
 
-		showJournalNotice(message) {
+		showCreateLinkedNote(title) {
+			const linkedTitle = String(title || '').trim()
+
+			if (!linkedTitle) {
+				return
+			}
+
+			this.pendingLinkedTitle = linkedTitle
+			this.linkedNoteDate = this.today
+
+			this.showJournalNotice(
+				t(
+					'journalnotes',
+					'This linked note has not been created yet.',
+				),
+				false,
+			)
+		},
+
+		showJournalNotice(message, autoHide = true) {
 			clearTimeout(this.linkNoticeTimeout)
 
 			this.linkNotice = String(message || '')
 
-			this.linkNoticeTimeout = window.setTimeout(() => {
-				this.linkNotice = ''
+			if (!autoHide) {
 				this.linkNoticeTimeout = null
+				return
+			}
+
+			this.linkNoticeTimeout = window.setTimeout(() => {
+				this.dismissLinkNotice()
 			}, 5000)
+		},
+
+		dismissLinkNotice() {
+			clearTimeout(this.linkNoticeTimeout)
+
+			this.linkNotice = ''
+			this.linkNoticeTimeout = null
+			this.pendingLinkedTitle = ''
+			this.creatingLinkedNote = false
+		},
+
+		async createLinkedNote() {
+			const title = this.pendingLinkedTitle.trim()
+			const date = this.linkedNoteDate
+
+			if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+				this.showJournalNotice(
+					t('journalnotes', 'Select a valid date.'),
+					false,
+				)
+				return
+			}
+
+			this.creatingLinkedNote = true
+
+			try {
+				/*
+				 * Journal solo admite una entrada por fecha.
+				 * Comprobamos que no exista contenido para evitar sobrescribirla.
+				 */
+				const existingResponse = await axios.get(
+					generateUrl(`apps/journalnotes/entry/${date}`),
+				)
+
+				const existing = existingResponse.data || {}
+				const existingContent = String(
+					existing.entryContent || '',
+				).trim()
+
+				if (
+					existing.isEmpty !== true
+					&& existingContent !== ''
+				) {
+					this.creatingLinkedNote = false
+					this.showJournalNotice(
+						t(
+							'journalnotes',
+							'This date already contains an entry. Choose another date.',
+						),
+						false,
+					)
+					return
+				}
+
+				const initialContent = `# ${title}\n\n`
+				const metadata = {
+					title,
+					categories: [],
+					tags: [],
+				}
+
+				await axios.put(
+					generateUrl(`apps/journalnotes/entry/${date}`),
+					{
+						content: initialContent,
+						metadataJson: JSON.stringify(metadata),
+					},
+				)
+
+				this.dismissLinkNotice()
+
+				await this.$router.push({
+					name: 'date',
+					params: { date },
+				})
+			} catch (error) {
+				this.creatingLinkedNote = false
+
+				// eslint-disable-next-line no-console
+				console.error(
+					t('journalnotes', 'Could not create the linked note'),
+					error,
+				)
+
+				this.showJournalNotice(
+					t(
+						'journalnotes',
+						'Could not create the linked note.',
+					),
+					false,
+				)
+			}
 		},
 
 		handleUpdate(entryDate, markdown) {
@@ -629,6 +768,27 @@ export default {
 	background: var(--color-background-dark);
 	color: var(--color-main-text);
 	font-size: 14px;
+}
+
+.link-notice__actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.link-notice__date {
+	min-height: 36px;
+	padding: 4px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+}
+
+.link-notice__actions button {
+	min-height: 36px;
 }
 
 </style>

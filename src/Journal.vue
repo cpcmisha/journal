@@ -391,9 +391,7 @@
 										:class="{
 											'relation-item--missing': !relation.exists,
 										}"
-										:disabled="!relation.exists"
-										@click="relation.exists
-											&& onDateChange(relation.date)">
+										@click="openOutgoingRelation(relation)">
 										<div class="relation-item__header">
 											<strong>{{ relation.title }}</strong>
 
@@ -469,6 +467,7 @@
 				<!-- Tercera columna: editor -->
 				<main class="editor-panel">
 					<Editor
+						ref="editor"
 						:date="date"
 						@entry-edit="onEdit" />
 				</main>
@@ -1029,7 +1028,7 @@ export default {
 			}
 		},
 
-		onEdit(entryDate, content) {
+		async onEdit(entryDate, content) {
 			if (entryDate === this.date) {
 				this.currentEntryContent = content || ''
 			}
@@ -1042,6 +1041,11 @@ export default {
 				if (entryIndex !== -1) {
 					this.lastEntries.splice(entryIndex, 1)
 				}
+
+				if (entryDate === this.date) {
+					await this.fetchRelations(entryDate)
+				}
+
 				return
 			}
 
@@ -1057,6 +1061,40 @@ export default {
 				})
 			} else {
 				this.lastEntries[entryIndex].excerpt = excerpt
+			}
+
+			/*
+			 * El backend ya guardó el Markdown. Volvemos a consultar
+			 * Relaciones para reflejar nuevos wikilinks sin recargar.
+			 */
+			if (entryDate === this.date) {
+				await this.fetchRelations(entryDate)
+			}
+		},
+
+		openOutgoingRelation(relation) {
+			if (!relation) {
+				return
+			}
+
+			if (relation.exists && relation.date) {
+				this.onDateChange(relation.date)
+				return
+			}
+
+			const title = String(relation.title || '').trim()
+
+			if (!title) {
+				return
+			}
+
+			const editor = this.$refs.editor
+
+			if (
+				editor
+				&& typeof editor.showCreateLinkedNote === 'function'
+			) {
+				editor.showCreateLinkedNote(title)
 			}
 		},
 
@@ -1800,6 +1838,13 @@ export default {
 
 .relation-item--missing {
 	border-style: dashed;
+	cursor: pointer;
+}
+
+.relation-item--missing:hover,
+.relation-item--missing:focus-visible {
+	border-color: var(--color-primary-element);
+	background: var(--color-background-hover);
 }
 
 .relation-item__header {
