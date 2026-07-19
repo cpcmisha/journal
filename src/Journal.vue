@@ -563,12 +563,14 @@ import FilePdfBox from 'vue-material-design-icons/FilePdfBox'
 import Markdown from 'vue-material-design-icons/LanguageMarkdown'
 
 import Editor from './Editor'
+import EntryInspector from './components/Inspector/EntryInspector'
 
 export default {
 	name: 'Journal',
 
 	components: {
 		Editor,
+		EntryInspector,
 		FilePdfBox,
 		Markdown,
 		NcActionLink,
