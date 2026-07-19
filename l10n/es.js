@@ -68,6 +68,9 @@ OC.L10N.register(
     "Close note information": "Cerrar información de la nota",
     "Information": "Información",
     "Connections": "Conexiones",
+    "Not created": "Pendiente",
+    "This note does not link to other notes yet.": "Esta nota aún no tiene enlaces.",
+    "No other entries link to this note yet.": "Todavía ninguna nota enlaza aquí.",
     "Title": "Título",
     "Give this note a title": "Dale un título a esta nota"
 },

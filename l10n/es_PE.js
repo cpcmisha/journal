@@ -19,8 +19,8 @@ OC.L10N.register(
     "Links to this note": "Enlaces hacia esta nota",
     "You can assign several categories.": "Puedes asignar varias categorías.",
     "Title": "Título",
-    "This note does not link to other notes yet.": "Esta nota todavía no enlaza a otras notas.",
-    "No other entries link to this note yet.": "Todavía no hay otras entradas que enlacen a esta nota.",
+    "This note does not link to other notes yet.": "Esta nota aún no tiene enlaces.",
+    "No other entries link to this note yet.": "Todavía ninguna nota enlaza aquí.",
     "Open Explore panel": "Abrir panel Explorar",
     "Open note information": "Abrir información de la nota",
     "Close side panel": "Cerrar panel lateral",
@@ -28,6 +28,7 @@ OC.L10N.register(
     "Close note information": "Cerrar información de la nota",
     "Information": "Información",
     "Connections": "Conexiones",
+    "Not created": "Pendiente",
     "Give this note a title": "Dale un título a esta nota"
 },
     "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");
