@@ -1,86 +1,12 @@
 <template>
 	<NcContent id="journal-content" app-name="journalnotes">
-		<!-- Primera columna: fechas -->
-		<NcAppNavigation class="dates-navigation">
-			<div class="navigation-wrapper">
-				<NcButton
-					class="icon icon-view-previous"
-					aria-label="Día anterior"
-					@click="goPrevDay" />
-
-				<input
-					ref="nativeDatePicker"
-					class="native-date-picker"
-					type="date"
-					:value="date"
-					:max="today"
-					@change="onNativeDateChange">
-
-				<NcButton
-					class="open-calendar"
-					:aria-label="t('journalnotes', 'Open calendar: {date}', { date: formattedDate })"
-					@click="openCalendar">
-					{{ formattedDate }}
-				</NcButton>
-
-				<NcButton
-					v-if="showNextDayButton"
-					class="icon icon-view-next"
-					aria-label="Día siguiente"
-					@click="goNextDay" />
-			</div>
-
-			<template #list>
-				<ul>
-					<NcListItem
-						v-for="entry in filteredEntries"
-						:key="entry.date"
-						:name="entry.title || formatDate(entry.date)"
-						:bold="false"
-						:compact="true"
-						counter-type="highlighted"
-						@click="!isCurrentDate(entry.date)
-							? onDateChange(entry.date)
-							: null">
-						<template #icon>
-							<NcAppNavigationIconBullet
-								v-if="isCurrentDate(entry.date)"
-								color="0082c9" />
-							<NcAppNavigationIconBullet
-								v-else
-								color="FFFFFF" />
-						</template>
-
-						<template #subname>
-							{{ entry.excerpt }}
-						</template>
-					</NcListItem>
-				</ul>
-			</template>
-
-			<template #footer>
-				<NcAppNavigationItem
-					class="export"
-					:title="t('journalnotes', 'Export')"
-					icon="icon-download">
-					<template #actions>
-						<NcActionLink :href="pdfDownloadLink">
-							<template #icon>
-								<FilePdfBox :size="20" />
-								{{ t('journalnotes', 'as PDF') }}
-							</template>
-						</NcActionLink>
-
-						<NcActionLink :href="markdownDownloadLink">
-							<template #icon>
-								<Markdown :size="20" />
-								{{ t('journalnotes', 'as Markdown') }}
-							</template>
-						</NcActionLink>
-					</template>
-				</NcAppNavigationItem>
-			</template>
-		</NcAppNavigation>
+		<!-- Primera columna: fechas y entradas -->
+		<DatesNavigation
+			:date="date"
+			:entries="filteredEntries"
+			:pdf-download-link="pdfDownloadLink"
+			:markdown-download-link="markdownDownloadLink"
+			@change-date="onDateChange" />
 
 		<NcAppContent class="journal-app-content">
 			<div
@@ -448,24 +374,18 @@
 
 <script>
 import {
-	NcActionLink,
 	NcAppContent,
-	NcAppNavigation,
-	NcAppNavigationIconBullet,
-	NcAppNavigationItem,
 	NcButton,
 	NcContent,
-	NcListItem,
 } from '@nextcloud/vue'
 
 import axios from '@nextcloud/axios'
 import moment from '@nextcloud/moment'
 import { generateUrl } from '@nextcloud/router'
 
-import FilePdfBox from 'vue-material-design-icons/FilePdfBox'
-import Markdown from 'vue-material-design-icons/LanguageMarkdown'
 
 import Editor from './Editor'
+import DatesNavigation from './components/Navigation/DatesNavigation'
 import ExplorePanel from './components/Explore/ExplorePanel'
 import EntryInspector from './components/Inspector/EntryInspector'
 
@@ -473,19 +393,13 @@ export default {
 	name: 'Journal',
 
 	components: {
+		DatesNavigation,
 		Editor,
 		ExplorePanel,
 		EntryInspector,
-		FilePdfBox,
-		Markdown,
-		NcActionLink,
 		NcAppContent,
-		NcAppNavigation,
-		NcAppNavigationIconBullet,
-		NcAppNavigationItem,
 		NcButton,
 		NcContent,
-			NcListItem,
 	},
 
 	props: {
@@ -549,15 +463,9 @@ export default {
 			return moment().format('YYYY-MM-DD')
 		},
 
-		formattedDate() {
-			return this.formatDate(this.date)
-		},
 
-		showNextDayButton() {
-			return moment(this.date)
-				.add(1, 'day')
-				.isSameOrBefore(moment(), 'day')
-		},
+
+
 
 		markdownDownloadLink() {
 			return `${this.baseUrl}/export/markdown`
@@ -806,48 +714,6 @@ export default {
 					date: targetDate,
 				},
 			})
-		},
-
-		openCalendar() {
-			const picker = this.$refs.nativeDatePicker
-
-			if (!picker) {
-				return
-			}
-
-			if (typeof picker.showPicker === 'function') {
-				picker.showPicker()
-			} else {
-				picker.click()
-			}
-		},
-
-		onNativeDateChange(event) {
-			const value = event.target.value
-
-			if (value) {
-				this.onDateChange(value)
-			}
-		},
-
-		goPrevDay() {
-			this.onDateChange(
-				moment(this.date).subtract(1, 'day'),
-			)
-		},
-
-		goNextDay() {
-			this.onDateChange(
-				moment(this.date).add(1, 'day'),
-			)
-		},
-
-		isCurrentDate(entryDate) {
-			return this.date === entryDate
-		},
-
-		formatDate(entryDate) {
-			return moment(entryDate).format('LL')
 		},
 
 		scheduleGlobalSearch() {
@@ -1429,36 +1295,6 @@ export default {
 	height: calc(100% - 50px);
 	margin: 0;
 
-	.dates-navigation {
-		flex: 0 0 300px;
-		width: 300px;
-	}
-
-	.navigation-wrapper {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		padding: 12px;
-
-		.native-date-picker {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			opacity: 0;
-			pointer-events: none;
-		}
-
-		.open-calendar {
-			flex: 1 1 auto;
-			min-width: 0;
-			font-size: 14px;
-		}
-	}
-
-	.export {
-		padding: 12px;
-	}
-
 	.journal-app-content {
 		flex: 1 1 auto !important;
 		width: auto !important;
@@ -1560,11 +1396,6 @@ export default {
 				minmax(0, 1fr)
 				280px;
 			padding-top: 48px;
-		}
-
-		.dates-navigation {
-			flex-basis: 270px;
-			width: 270px;
 		}
 
 		.responsive-panel-toolbar {
