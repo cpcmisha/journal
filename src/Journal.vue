@@ -1483,142 +1483,6 @@ export default {
 			minmax(0, 1fr);
 	}
 
-	.organizer-panel {
-		min-width: 0;
-		padding: 20px 16px;
-		overflow-y: auto;
-		border-right: 1px solid var(--color-border);
-		background: var(--color-main-background);
-	}
-
-
-
-
-
-	.organizer-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		margin-bottom: 24px;
-
-		h2 {
-			margin: 0;
-			font-size: 18px;
-		}
-	}
-
-	.editor-panel {
-		width: 100%;
-		min-width: 0;
-		height: 100%;
-		overflow: hidden;
-	}
-
-	.app-content,
-	.app-content__main {
-		flex: 1 1 auto !important;
-		width: 100% !important;
-		max-width: none !important;
-		min-width: 0 !important;
-	}
-
-	/*
-	 * El botón de apertura/cierre de NcAppContent se superpone
-	 * en el borde izquierdo. Dejamos espacio para que no tape el título.
-	 */
-	.organizer-header {
-		padding-left: 28px;
-	}
-
-	.global-filters {
-		margin-bottom: 24px;
-		padding-bottom: 22px;
-		border-bottom: 1px solid var(--color-border);
-
-		> label {
-			display: block;
-			margin-bottom: 8px;
-			font-weight: 600;
-		}
-
-		> input {
-			width: 100%;
-			min-height: 38px;
-			padding: 7px 10px;
-			border: 1px solid var(--color-border-maxcontrast);
-			border-radius: var(--border-radius-large);
-			background: var(--color-main-background);
-			color: var(--color-main-text);
-			box-sizing: border-box;
-		}
-	}
-
-	.filter-group {
-		margin-top: 18px;
-
-		h3 {
-			margin: 0 0 8px;
-			font-size: 13px;
-			color: var(--color-text-maxcontrast);
-		}
-	}
-
-	.filter-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-	}
-
-	.filter-chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		min-height: 28px;
-		padding: 3px 8px;
-		border: 1px solid var(--color-border);
-		border-radius: 14px;
-		background: var(--color-background-hover);
-		color: var(--color-main-text);
-		cursor: pointer;
-
-		span {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 18px;
-			height: 18px;
-			padding: 0 4px;
-			border-radius: 9px;
-			background: var(--color-background-dark);
-			font-size: 11px;
-		}
-
-		&:hover,
-		&.active {
-			border-color: var(--color-primary-element);
-			background: var(--color-primary-element);
-			color: var(--color-primary-element-text);
-		}
-	}
-
-	.clear-filters {
-		margin-top: 14px;
-		padding: 5px 10px;
-		border: 0;
-		border-radius: var(--border-radius);
-		background: var(--color-background-hover);
-		color: var(--color-main-text);
-		cursor: pointer;
-	}
-
-	.filter-result-count {
-		display: inline-block;
-		margin: 14px 0 0 8px;
-		font-size: 12px;
-		color: var(--color-text-maxcontrast);
-	}
-
 	.current-entry-heading {
 		margin: 8px 0 16px;
 		padding-bottom: 8px;
@@ -1698,23 +1562,6 @@ export default {
 			padding-top: 48px;
 		}
 
-		.organizer-panel {
-			display: block;
-			position: absolute;
-			top: 0;
-			bottom: 0;
-			left: 0;
-			z-index: 500;
-			width: min(320px, 88vw);
-			transform: translateX(-105%);
-			box-shadow: 6px 0 24px rgb(0 0 0 / 20%);
-			transition: transform 160ms ease;
-		}
-
-		.organizer-panel--open {
-			transform: translateX(0);
-		}
-
 		.dates-navigation {
 			flex-basis: 270px;
 			width: 270px;
@@ -1740,16 +1587,5 @@ export default {
 		}
 	}
 }
-
-.search-status {
-	margin: 6px 0 12px;
-	font-size: 12px;
-	color: var(--color-text-maxcontrast);
-
-	&.error {
-		color: var(--color-error);
-	}
-}
-
 
 </style>
