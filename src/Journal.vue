@@ -716,6 +716,10 @@ export default {
 			})
 		},
 
+		formatDate(entryDate) {
+			return moment(entryDate).format('LL')
+		},
+
 		scheduleGlobalSearch() {
 			clearTimeout(this.searchTimeout)
 
