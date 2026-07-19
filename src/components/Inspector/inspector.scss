@@ -210,28 +210,32 @@
 }
 
 .relation-item {
-	display: flex;
+	display: block;
 	width: 100%;
-	flex-direction: column;
-	gap: 4px;
 	padding: 10px 12px;
-	border: 1px solid transparent;
-	border-radius: var(--border-radius-large);
-	background: var(--color-primary-element-light);
-	color: var(--color-main-text);
+	border: 0;
+	border-radius: var(--border-radius-pill);
+	background: var(--color-background-hover);
+	color: inherit;
 	text-align: left;
 	cursor: pointer;
+	transition: background-color .15s ease;
 }
 
 .relation-item:hover,
 .relation-item:focus-visible {
-	border-color: var(--color-primary-element);
-	background: var(--color-background-hover);
+	background: var(--color-background-dark);
+	outline: none;
 }
 
 .relation-item--missing {
-	opacity: 0.82;
+	opacity: .75;
 }
+
+
+
+
+
 
 .relation-item__header {
 	display: flex;

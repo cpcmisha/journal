@@ -1168,4 +1168,24 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+
+/* Wikilinks: resaltado sencillo al pasar el cursor. */
+#diary-editor .text-editor a[iswikilink] {
+	padding: 1px 4px;
+	border-radius: var(--border-radius);
+	text-decoration: none;
+	transition: background-color 120ms ease;
+}
+
+#diary-editor .text-editor a[iswikilink]:hover,
+#diary-editor .text-editor a[iswikilink]:focus-visible {
+	background: var(--color-primary-element-light);
+	text-decoration: none;
+}
+
+#diary-editor .text-editor a[iswikilink]:focus-visible {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: 1px;
+}
+
 </style>

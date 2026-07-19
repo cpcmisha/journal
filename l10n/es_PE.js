@@ -30,6 +30,9 @@ OC.L10N.register(
     "Connections": "Conexiones",
     "Not created": "Pendiente",
     "Give this note a title": "Dale un título a esta nota",
-    "Clear filters": "Limpiar filtros"
+    "Clear filters": "Limpiar filtros",
+    "Create note": "Crear nota",
+    "Cancel": "Cancelar",
+    "This date already contains an entry. Choose another date.": "Esta fecha ya contiene una entrada. Elige otra fecha."
 },
     "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

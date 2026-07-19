@@ -72,7 +72,10 @@
         "No other entries link to this note yet.": "Todavía ninguna nota enlaza aquí.",
         "Title": "Título",
         "Give this note a title": "Dale un título a esta nota",
-        "Clear filters": "Limpiar filtros"
+        "Clear filters": "Limpiar filtros",
+        "Create note": "Crear nota",
+        "Cancel": "Cancelar",
+        "This date already contains an entry. Choose another date.": "Esta fecha ya contiene una entrada. Elige otra fecha."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

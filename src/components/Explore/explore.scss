@@ -95,11 +95,17 @@
 }
 
 .filter-chip:hover,
-.filter-chip:focus-visible,
+.filter-chip:focus-visible {
+	border-color: var(--color-border-maxcontrast);
+	background: var(--color-background-dark);
+	color: var(--color-primary-element-light-text);
+	outline: none;
+}
+
 .filter-chip.active {
 	border-color: var(--color-primary-element);
-	background: var(--color-primary-element);
-	color: var(--color-primary-element-text);
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
 }
 
 .clear-filters {
@@ -157,4 +163,10 @@
 	.organizer-panel {
 		transition: none;
 	}
+}
+
+.filter-chip:hover span,
+.filter-chip:focus-visible span,
+.filter-chip.active span {
+	color: inherit;
 }
