@@ -29,6 +29,7 @@ OC.L10N.register(
     "Information": "Información",
     "Connections": "Conexiones",
     "Not created": "Pendiente",
-    "Give this note a title": "Dale un título a esta nota"
+    "Give this note a title": "Dale un título a esta nota",
+    "Clear filters": "Limpiar filtros"
 },
     "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");

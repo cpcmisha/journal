@@ -120,119 +120,22 @@
 					:aria-label="t('journalnotes', 'Close side panel')"
 					@click="closeResponsivePanels" />
 
-				<!-- Segunda columna: organización -->
-				<aside
-					class="organizer-panel"
-					:class="{
-						'organizer-panel--open': explorePanelOpen,
-					}">
-					<div class="organizer-header">
-						<h2>{{ t('journalnotes', 'Explore') }}</h2>
-
-						<NcButton
-							type="tertiary"
-							class="responsive-panel-close"
-							:aria-label="t('journalnotes', 'Close Explore panel')"
-							@click="closeResponsivePanels">
-							<span
-								class="icon-close"
-								aria-hidden="true" />
-						</NcButton>
-					</div>
-
-					<section class="global-filters">
-						<label for="journal-search">
-							{{ t('journalnotes', 'Search notes') }}
-						</label>
-
-						<input
-							id="journal-search"
-							v-model.trim="searchQuery"
-							type="search"
-							:placeholder="t('journalnotes', 'Search dates and excerpts')">
-
-						<p
-							v-if="searchStatus === 'loading'"
-							class="search-status">
-							{{ t('journalnotes', 'Searching…') }}
-						</p>
-
-						<p
-							v-else-if="searchStatus === 'error'"
-							class="search-status error">
-							{{ t('journalnotes', 'Could not search Journal entries') }}
-						</p>
-
-						<p
-							v-else-if="searchQuery.trim()
-								&& searchStatus === 'loaded'"
-							class="search-status">
-							{{ filteredEntries.length }}
-							{{ filteredEntries.length === 1
-								? t('journalnotes', 'result')
-								: t('journalnotes', 'results') }}
-						</p>
-
-						<div
-							v-if="categoryStats.length"
-							class="filter-group">
-							<h3>{{ t('journalnotes', 'Categories') }}</h3>
-
-							<div class="filter-list">
-								<button
-									v-for="item in categoryStats"
-									:key="item.name"
-									type="button"
-									class="filter-chip category-filter"
-									:class="{
-										active: activeCategory === item.name,
-									}"
-									@click="toggleCategoryFilter(item.name)">
-									{{ item.name }}
-									<span>{{ item.count }}</span>
-								</button>
-							</div>
-						</div>
-
-						<div
-							v-if="tagStats.length"
-							class="filter-group">
-							<h3>{{ t('journalnotes', 'Tags') }}</h3>
-
-							<div class="filter-list">
-								<button
-									v-for="item in tagStats"
-									:key="item.name"
-									type="button"
-									class="filter-chip tag-filter"
-									:class="{
-										active: activeTag === item.name,
-									}"
-									@click="toggleTagFilter(item.name)">
-									#{{ item.name }}
-									<span>{{ item.count }}</span>
-								</button>
-							</div>
-						</div>
-
-						<button
-							v-if="hasActiveFilters"
-							type="button"
-							class="clear-filters"
-							@click="clearFilters">
-							Limpiar filtros
-						</button>
-
-						<p
-							v-if="hasActiveFilters"
-							class="filter-result-count">
-							{{ filteredEntries.length }}
-							{{ filteredEntries.length === 1 ? t('journalnotes', 'entry') : t('journalnotes', 'entries') }}
-						</p>
-					</section>
-
-
-				</aside>
+				<!-- Segunda columna: exploración y filtros -->
+				<ExplorePanel
+					:open="explorePanelOpen"
+					:search-query="searchQuery"
+					:search-status="searchStatus"
+					:category-stats="categoryStats"
+					:tag-stats="tagStats"
+					:active-category="activeCategory"
+					:active-tag="activeTag"
+					:result-count="filteredEntries.length"
+					:has-active-filters="hasActiveFilters"
+					@close="closeResponsivePanels"
+					@update-search-query="searchQuery = $event"
+					@toggle-category="toggleCategoryFilter"
+					@toggle-tag="toggleTagFilter"
+					@clear-filters="clearFilters" />
 
 				<!-- Tercera columna: editor -->
 				<main class="editor-panel">
@@ -563,6 +466,7 @@ import FilePdfBox from 'vue-material-design-icons/FilePdfBox'
 import Markdown from 'vue-material-design-icons/LanguageMarkdown'
 
 import Editor from './Editor'
+import ExplorePanel from './components/Explore/ExplorePanel'
 import EntryInspector from './components/Inspector/EntryInspector'
 
 export default {
@@ -570,6 +474,7 @@ export default {
 
 	components: {
 		Editor,
+		ExplorePanel,
 		EntryInspector,
 		FilePdfBox,
 		Markdown,

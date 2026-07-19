@@ -78,7 +78,8 @@
         "Close Explore panel": "Erkunden-Bereich schließen",
         "Close note information": "Notizinformationen schließen",
         "Information": "Informationen",
-        "Connections": "Verknüpfungen"
+        "Connections": "Verknüpfungen",
+        "Clear filters": "Filter zurücksetzen"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

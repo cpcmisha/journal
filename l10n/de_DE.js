@@ -79,6 +79,7 @@ OC.L10N.register(
     "Close Explore panel": "Erkunden-Bereich schließen",
     "Close note information": "Notizinformationen schließen",
     "Information": "Informationen",
-    "Connections": "Verknüpfungen"
+    "Connections": "Verknüpfungen",
+    "Clear filters": "Filter zurücksetzen"
 },
     "nplurals=2; plural=(n != 1);");
