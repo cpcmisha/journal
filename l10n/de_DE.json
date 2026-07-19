@@ -50,7 +50,7 @@
         "Could not open the linked note.": "Die verknüpfte Notiz konnte nicht geöffnet werden.",
         "Could not resolve the linked note": "Die verknüpfte Notiz konnte nicht gefunden werden",
         "Several notes use this title. Select a date from Relations.": "Mehrere Notizen verwenden diesen Titel. Wählen Sie unter Beziehungen ein Datum aus.",
-        "Relations": "Beziehungen",
+        "Relations": "Verknüpfungen",
         "Links from this note": "Links aus dieser Notiz",
         "Links to this note": "Links zu dieser Notiz",
         "This note does not link to other notes yet.": "Diese Notiz enthält noch keine Links zu anderen Notizen.",
@@ -63,7 +63,22 @@
         "Wikilinks use this title to identify the note.": "Wikilinks verwenden diesen Titel, um die Notiz zu identifizieren.",
         "Give this note a title": "Geben Sie dieser Notiz einen Titel",
         "Title": "Titel",
-        "Write today": "Heute schreiben"
+        "Write today": "Heute schreiben",
+        "Note": "Notiz",
+        "Related notes": "Verknüpfte Notizen",
+        "This note links to": "Diese Notiz verweist auf",
+        "Notes linking here": "Notizen, die hierher verweisen",
+        "Explore": "Erkunden",
+        "Search notes": "Notizen suchen",
+        "Tags": "Schlagwörter",
+        "You can assign several categories.": "Sie können mehrere Kategorien zuweisen.",
+        "Open Explore panel": "Erkunden-Bereich öffnen",
+        "Open note information": "Notizinformationen öffnen",
+        "Close side panel": "Seitenbereich schließen",
+        "Close Explore panel": "Erkunden-Bereich schließen",
+        "Close note information": "Notizinformationen schließen",
+        "Information": "Informationen",
+        "Connections": "Verknüpfungen"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

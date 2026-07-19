@@ -83,31 +83,66 @@
 		</NcAppNavigation>
 
 		<NcAppContent class="journal-app-content">
-			<div class="journal-workspace">
+			<div
+				class="journal-workspace"
+				:class="{ 'journal-workspace--welcome': !hasContent }">
+				<div class="responsive-panel-toolbar">
+					<NcButton
+						type="tertiary"
+						class="responsive-panel-button"
+						:aria-expanded="explorePanelOpen"
+						:aria-label="t('journalnotes', 'Open Explore panel')"
+						@click="openExplorePanel">
+						<span
+							class="icon-menu"
+							aria-hidden="true" />
+						{{ t('journalnotes', 'Explore') }}
+					</NcButton>
+
+					<NcButton
+						v-if="hasContent"
+						type="tertiary"
+						class="responsive-panel-button"
+						:aria-expanded="inspectorPanelOpen"
+						:aria-label="t('journalnotes', 'Open note information')"
+						@click="openInspectorPanel">
+						<span
+							class="icon-info"
+							aria-hidden="true" />
+						{{ t('journalnotes', 'Note') }}
+					</NcButton>
+				</div>
+
+				<button
+					v-if="explorePanelOpen || inspectorPanelOpen"
+					type="button"
+					class="responsive-panel-backdrop"
+					:aria-label="t('journalnotes', 'Close side panel')"
+					@click="closeResponsivePanels" />
+
 				<!-- Segunda columna: organización -->
-				<aside class="organizer-panel">
+				<aside
+					class="organizer-panel"
+					:class="{
+						'organizer-panel--open': explorePanelOpen,
+					}">
 					<div class="organizer-header">
-						<h2>{{ t('journalnotes', 'Organization') }}</h2>
-						<span
-							v-if="metadataStatus === 'saving'"
-							class="metadata-status">
-							Guardando…
-						</span>
-						<span
-							v-else-if="metadataStatus === 'saved'"
-							class="metadata-status saved">
-							{{ t('journalnotes', 'Saved') }}
-						</span>
-						<span
-							v-else-if="metadataStatus === 'error'"
-							class="metadata-status error">
-							{{ t('journalnotes', 'Could not save') }}
-						</span>
+						<h2>{{ t('journalnotes', 'Explore') }}</h2>
+
+						<NcButton
+							type="tertiary"
+							class="responsive-panel-close"
+							:aria-label="t('journalnotes', 'Close Explore panel')"
+							@click="closeResponsivePanels">
+							<span
+								class="icon-close"
+								aria-hidden="true" />
+						</NcButton>
 					</div>
 
 					<section class="global-filters">
 						<label for="journal-search">
-							{{ t('journalnotes', 'Search entries') }}
+							{{ t('journalnotes', 'Search notes') }}
 						</label>
 
 						<input
@@ -141,7 +176,7 @@
 						<div
 							v-if="categoryStats.length"
 							class="filter-group">
-							<h3>{{ t('journalnotes', 'Journal categories') }}</h3>
+							<h3>{{ t('journalnotes', 'Categories') }}</h3>
 
 							<div class="filter-list">
 								<button
@@ -162,7 +197,7 @@
 						<div
 							v-if="tagStats.length"
 							class="filter-group">
-							<h3>{{ t('journalnotes', 'Journal tags') }}</h3>
+							<h3>{{ t('journalnotes', 'Tags') }}</h3>
 
 							<div class="filter-list">
 								<button
@@ -196,8 +231,55 @@
 						</p>
 					</section>
 
-					<div class="current-entry-heading">
-						<h3>{{ t('journalnotes', 'This entry') }}</h3>
+
+				</aside>
+
+				<!-- Tercera columna: editor -->
+				<main class="editor-panel">
+					<Editor
+						ref="editor"
+						:date="date"
+						@entry-edit="onEdit" />
+
+				</main>
+
+				<!-- Cuarta columna: información de la entrada actual -->
+				<aside
+					v-if="hasContent"
+					class="inspector-panel"
+					:class="{
+						'inspector-panel--open': inspectorPanelOpen,
+					}">
+					<div class="inspector-header">
+						<h2>{{ t('journalnotes', 'Information') }}</h2>
+
+						<NcButton
+							type="tertiary"
+							class="responsive-panel-close"
+							:aria-label="t('journalnotes', 'Close note information')"
+							@click="closeResponsivePanels">
+							<span
+								class="icon-close"
+								aria-hidden="true" />
+						</NcButton>
+
+						<span
+							v-if="metadataStatus === 'saving'"
+							class="metadata-status">
+							Guardando…
+						</span>
+
+						<span
+							v-else-if="metadataStatus === 'saved'"
+							class="metadata-status saved">
+							{{ t('journalnotes', 'Saved') }}
+						</span>
+
+						<span
+							v-else-if="metadataStatus === 'error'"
+							class="metadata-status error">
+							{{ t('journalnotes', 'Could not save') }}
+						</span>
 					</div>
 
 					<div class="organizer-section title-section">
@@ -214,128 +296,6 @@
 							:disabled="!hasContent"
 							@input="scheduleMetadataSave">
 
-						<p class="organizer-help">
-							{{ t('journalnotes', 'Wikilinks use this title to identify the note.') }}
-						</p>
-					</div>
-
-					<div class="organizer-section">
-						<label for="journal-category">
-							{{ t('journalnotes', 'Categories') }}
-						</label>
-
-						<div class="tag-list">
-							<button
-								v-for="categoryItem in categories"
-								:key="categoryItem"
-								type="button"
-								class="category-chip"
-								:title="t('journalnotes', 'Remove category {category}', { category: categoryItem })"
-								@click="removeCategory(categoryItem)">
-								{{ categoryItem }}
-								<span aria-hidden="true">×</span>
-							</button>
-						</div>
-
-						<input
-							id="journal-category"
-							v-model="categoryInput"
-							type="text"
-							list="journal-category-suggestions"
-							:placeholder="t('journalnotes', 'Type a category and press Enter')"
-							:disabled="!hasContent"
-							@keydown.enter.prevent="addCategory"
-							@keydown.,.prevent="addCategory">
-
-						<datalist id="journal-category-suggestions">
-							<option
-								v-for="item in categorySuggestions"
-								:key="item"
-								:value="item" />
-						</datalist>
-
-						<p class="organizer-help">
-							{{ t('journalnotes', 'An entry can belong to Work, Personal and other categories at the same time.') }}
-						</p>
-					</div>
-
-					<div class="organizer-section system-tags-section">
-						<label for="journal-tag-input">
-							{{ t('journalnotes', 'Nextcloud tags') }}
-						</label>
-
-						<div class="tag-list">
-							<button
-								v-for="tag in selectedSystemTags"
-								:key="tag.id"
-								type="button"
-								class="tag-chip"
-								:title="t('journalnotes', 'Remove tag {tag}', { tag: tag.name })"
-								:disabled="systemTagStatus === 'saving'"
-								@click="removeSystemTag(tag)">
-								#{{ tag.name }}
-								<span aria-hidden="true">×</span>
-							</button>
-						</div>
-
-						<div class="system-tag-search">
-							<input
-								id="journal-tag-input"
-								v-model="tagInput"
-								type="text"
-								:placeholder="t('journalnotes', 'Search or create a tag')"
-								autocomplete="off"
-								:disabled="!hasContent
-									|| systemTagStatus === 'loading'"
-								@focus="showTagSuggestions = true"
-								@input="showTagSuggestions = true"
-								@keydown.enter.prevent="selectOrCreateSystemTag"
-								@keydown.esc="showTagSuggestions = false">
-
-							<div
-								v-if="showTagSuggestions
-									&& tagInput.trim()
-									&& availableSystemTags.length"
-								class="system-tag-suggestions">
-								<button
-									v-for="tag in availableSystemTags"
-									:key="tag.id"
-									type="button"
-									@click="addExistingSystemTag(tag)">
-									<span>#{{ tag.name }}</span>
-									<small>Nextcloud</small>
-								</button>
-							</div>
-
-							<div
-								v-else-if="showTagSuggestions
-									&& tagInput.trim()
-									&& !exactSystemTagExists"
-								class="system-tag-suggestions">
-								<button
-									type="button"
-									class="create-system-tag"
-									@click="createAndAddSystemTag">
-									Crear “{{ normalizedTagInput }}”
-								</button>
-							</div>
-						</div>
-
-						<p
-							v-if="systemTagStatus === 'saving'"
-							class="organizer-help">
-							{{ t('journalnotes', 'Saving tags…') }}
-						</p>
-
-						<p
-							v-else-if="systemTagStatus === 'error'"
-							class="organizer-help tag-error">
-							{{ t('journalnotes', 'Could not save the tags.') }}
-						</p>
-
-						<p v-else class="organizer-help">
-							{{ t('journalnotes', 'These are the same tags used by Nextcloud Files.') }}
-</p>
 					</div>
 
 					<div
@@ -457,20 +417,127 @@
 						</template>
 					</div>
 
+					<div class="organizer-section">
+						<label for="journal-category">
+							{{ t('journalnotes', 'Categories') }}
+						</label>
+
+						<div class="tag-list">
+							<button
+								v-for="categoryItem in categories"
+								:key="categoryItem"
+								type="button"
+								class="category-chip"
+								:title="t('journalnotes', 'Remove category {category}', { category: categoryItem })"
+								@click="removeCategory(categoryItem)">
+								{{ categoryItem }}
+								<span aria-hidden="true">×</span>
+							</button>
+						</div>
+
+						<input
+							id="journal-category"
+							v-model="categoryInput"
+							type="text"
+							list="journal-category-suggestions"
+							:placeholder="t('journalnotes', 'Type a category and press Enter')"
+							:disabled="!hasContent"
+							@keydown.enter.prevent="addCategory"
+							@keydown.,.prevent="addCategory">
+
+						<datalist id="journal-category-suggestions">
+							<option
+								v-for="item in categorySuggestions"
+								:key="item"
+								:value="item" />
+						</datalist>
+
+						<p class="organizer-help">
+							{{ t('journalnotes', 'You can assign several categories.') }}
+						</p>
+					</div>
+
+					<div class="organizer-section system-tags-section">
+						<label for="journal-tag-input">
+							{{ t('journalnotes', 'Tags') }}
+						</label>
+
+						<div class="tag-list">
+							<button
+								v-for="tag in selectedSystemTags"
+								:key="tag.id"
+								type="button"
+								class="tag-chip"
+								:title="t('journalnotes', 'Remove tag {tag}', { tag: tag.name })"
+								:disabled="systemTagStatus === 'saving'"
+								@click="removeSystemTag(tag)">
+								#{{ tag.name }}
+								<span aria-hidden="true">×</span>
+							</button>
+						</div>
+
+						<div class="system-tag-search">
+							<input
+								id="journal-tag-input"
+								v-model="tagInput"
+								type="text"
+								:placeholder="t('journalnotes', 'Search or create a tag')"
+								autocomplete="off"
+								:disabled="!hasContent
+									|| systemTagStatus === 'loading'"
+								@focus="showTagSuggestions = true"
+								@input="showTagSuggestions = true"
+								@keydown.enter.prevent="selectOrCreateSystemTag"
+								@keydown.esc="showTagSuggestions = false">
+
+							<div
+								v-if="showTagSuggestions
+									&& tagInput.trim()
+									&& availableSystemTags.length"
+								class="system-tag-suggestions">
+								<button
+									v-for="tag in availableSystemTags"
+									:key="tag.id"
+									type="button"
+									@click="addExistingSystemTag(tag)">
+									<span>#{{ tag.name }}</span>
+									<small>Nextcloud</small>
+								</button>
+							</div>
+
+							<div
+								v-else-if="showTagSuggestions
+									&& tagInput.trim()
+									&& !exactSystemTagExists"
+								class="system-tag-suggestions">
+								<button
+									type="button"
+									class="create-system-tag"
+									@click="createAndAddSystemTag">
+									Crear “{{ normalizedTagInput }}”
+								</button>
+							</div>
+						</div>
+
+						<p
+							v-if="systemTagStatus === 'saving'"
+							class="organizer-help">
+							{{ t('journalnotes', 'Saving tags…') }}
+						</p>
+
+						<p
+							v-else-if="systemTagStatus === 'error'"
+							class="organizer-help tag-error">
+							{{ t('journalnotes', 'Could not save the tags.') }}
+						</p>
+
+					</div>
+
 					<div
 						v-if="!hasContent"
 						class="empty-metadata-notice">
 						{{ t('journalnotes', 'Write and save the entry before assigning categories and tags.') }}
-					</div>
-				</aside>
-
-				<!-- Tercera columna: editor -->
-				<main class="editor-panel">
-					<Editor
-						ref="editor"
-						:date="date"
-						@entry-edit="onEdit" />
-				</main>
+					</div>				</aside>
 			</div>
 		</NcAppContent>
 	</NcContent>
@@ -534,6 +601,10 @@ export default {
 			searchRequestId: 0,
 			activeCategory: null,
 			activeTag: null,
+
+			explorePanelOpen: false,
+			inspectorPanelOpen: false,
+			responsiveKeydownHandler: null,
 
 			currentEntryContent: '',
 			noteTitle: '',
@@ -750,6 +821,7 @@ export default {
 		date: {
 			immediate: true,
 			handler() {
+				this.closeResponsivePanels()
 				this.fetchCurrentEntry()
 			},
 		},
@@ -762,14 +834,53 @@ export default {
 	mounted() {
 		this.fetchPastEntries()
 		this.fetchSystemTagsCatalog()
+
+		this.responsiveKeydownHandler = event => {
+			this.handleResponsiveKeydown(event)
+		}
+
+		window.addEventListener(
+			'keydown',
+			this.responsiveKeydownHandler,
+		)
 	},
 
 	beforeUnmount() {
 		clearTimeout(this.metadataTimeout)
 		clearTimeout(this.searchTimeout)
+
+		if (this.responsiveKeydownHandler) {
+			window.removeEventListener(
+				'keydown',
+				this.responsiveKeydownHandler,
+			)
+		}
+
+		this.responsiveKeydownHandler = null
 	},
 
 	methods: {
+		openExplorePanel() {
+			this.inspectorPanelOpen = false
+			this.explorePanelOpen = true
+		},
+
+		openInspectorPanel() {
+			this.explorePanelOpen = false
+			this.inspectorPanelOpen = true
+		},
+
+		closeResponsivePanels() {
+			this.explorePanelOpen = false
+			this.inspectorPanelOpen = false
+		},
+
+		handleResponsiveKeydown(event) {
+			if (event.key === 'Escape') {
+				this.closeResponsivePanels()
+			}
+		},
+
 		onDateChange(value) {
 			const parsedDate = moment(value)
 
@@ -1450,10 +1561,19 @@ export default {
 
 	.journal-workspace {
 		display: grid;
-		grid-template-columns: 250px minmax(0, 1fr);
+		grid-template-columns:
+			250px
+			minmax(0, 1fr)
+			290px;
 		width: 100%;
 		height: 100%;
 		min-width: 0;
+	}
+
+	.journal-workspace--welcome {
+		grid-template-columns:
+			250px
+			minmax(0, 1fr);
 	}
 
 	.organizer-panel {
@@ -1462,6 +1582,66 @@ export default {
 		overflow-y: auto;
 		border-right: 1px solid var(--color-border);
 		background: var(--color-main-background);
+	}
+
+	.inspector-panel {
+		min-width: 0;
+		padding: 18px 16px 28px;
+		overflow-y: auto;
+		border-left: 1px solid var(--color-border);
+		background: var(--color-main-background);
+		box-sizing: border-box;
+	}
+
+	.inspector-subheading {
+		margin: 22px 0 12px;
+		padding-top: 14px;
+		border-top: 1px solid var(--color-border);
+
+		span {
+			font-size: 15px;
+			line-height: 1;
+		}
+
+		h3 {
+			margin: 0;
+			color: var(--color-text-maxcontrast);
+			font-size: 12px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+		}
+	}
+
+	.title-section > label::before {
+		margin-right: 6px;
+		content: "📝";
+	}
+
+	.categories-section > label::before {
+		margin-right: 6px;
+		content: "📂";
+	}
+
+	.system-tags-section > label::before {
+		margin-right: 6px;
+		content: "🏷";
+	}
+
+	.inspector-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin-bottom: 16px;
+		padding-bottom: 10px;
+		border-bottom: 1px solid var(--color-border);
+
+		h2 {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 600;
+		}
 	}
 
 	.organizer-header {
@@ -1491,7 +1671,7 @@ export default {
 	}
 
 	.organizer-section {
-		margin-bottom: 28px;
+		margin-bottom: 14px;
 
 		label {
 			display: block;
@@ -1728,32 +1908,140 @@ export default {
 	}
 
 	.current-entry-heading {
-		margin-bottom: 18px;
+		margin: 8px 0 16px;
+		padding-bottom: 8px;
+		border-bottom: 1px solid var(--color-border);
 
 		h3 {
 			margin: 0;
 			font-size: 15px;
+			font-weight: 600;
+		}
+	}
+
+	.organizer-group-heading {
+		margin-top: 32px;
+	}
+
+	.responsive-panel-toolbar {
+		display: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		left: 0;
+		z-index: 350;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		height: 48px;
+		padding: 4px 10px;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-main-background);
+		box-sizing: border-box;
+	}
+
+	.responsive-panel-button {
+		min-width: 0;
+	}
+
+	.responsive-panel-button span {
+		margin-right: 6px;
+	}
+
+	.responsive-panel-close {
+		display: none;
+		flex-shrink: 0;
+	}
+
+	.responsive-panel-backdrop {
+		position: absolute;
+		inset: 0;
+		z-index: 450;
+		padding: 0;
+		border: 0;
+		background: rgb(0 0 0 / 28%);
+		cursor: default;
+	}
+
+	@media (max-width: 1050px) {
+		.responsive-panel-close {
+			display: inline-flex;
+		}
+	}
+
+	@media (max-width: 1400px) {
+		.journal-workspace {
+			grid-template-columns:
+				220px
+				minmax(0, 1fr)
+				280px;
 		}
 	}
 
 	@media (max-width: 1050px) {
 		.journal-workspace {
-			grid-template-columns: 210px minmax(0, 1fr);
+			grid-template-columns:
+				minmax(0, 1fr)
+				280px;
+			padding-top: 48px;
+		}
+
+		.organizer-panel {
+			display: block;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			z-index: 500;
+			width: min(320px, 88vw);
+			transform: translateX(-105%);
+			box-shadow: 6px 0 24px rgb(0 0 0 / 20%);
+			transition: transform 160ms ease;
+		}
+
+		.organizer-panel--open {
+			transform: translateX(0);
 		}
 
 		.dates-navigation {
 			flex-basis: 270px;
 			width: 270px;
 		}
+
+		.responsive-panel-toolbar {
+			display: flex;
+		}
 	}
 
 	@media (max-width: 800px) {
-		.journal-workspace {
+		.journal-workspace,
+		.journal-workspace--welcome {
 			display: block;
+			padding-top: 48px;
 		}
 
-		.organizer-panel {
-			display: none;
+		.inspector-panel {
+			display: block;
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 500;
+			width: min(320px, 88vw);
+			transform: translateX(105%);
+			box-shadow: -6px 0 24px rgb(0 0 0 / 20%);
+			transition: transform 160ms ease;
+		}
+
+		.inspector-panel--open {
+			transform: translateX(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.organizer-panel,
+		.inspector-panel {
+			transition: none;
 		}
 	}
 }
@@ -1857,11 +2145,14 @@ export default {
 
 .relation-item strong {
 	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.3;
 }
 
 .relation-item small {
-	margin-top: 2px;
+	margin-top: 4px;
 	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 
 .relation-item > span:not(.relation-status) {
@@ -1872,7 +2163,7 @@ export default {
 	font-size: 13px;
 	line-height: 1.35;
 	-webkit-box-orient: vertical;
-	-webkit-line-clamp: 3;
+	-webkit-line-clamp: 2;
 }
 
 .relation-status {

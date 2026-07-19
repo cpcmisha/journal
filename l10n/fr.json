@@ -25,7 +25,23 @@
         "Wikilinks use this title to identify the note.": "Les wikiliens utilisent ce titre pour identifier la note.",
         "Give this note a title": "Donnez un titre à cette note",
         "Title": "Titre",
-        "Write today": "Écrire aujourd’hui"
+        "Write today": "Écrire aujourd’hui",
+        "Note": "Note",
+        "Related notes": "Notes associées",
+        "Organization": "Organisation",
+        "This note links to": "Cette note renvoie vers",
+        "Notes linking here": "Notes qui renvoient ici",
+        "Explore": "Explorer",
+        "Search notes": "Rechercher des notes",
+        "Tags": "Étiquettes",
+        "You can assign several categories.": "Vous pouvez attribuer plusieurs catégories.",
+        "Open Explore panel": "Ouvrir le panneau Explorer",
+        "Open note information": "Ouvrir les informations de la note",
+        "Close side panel": "Fermer le panneau latéral",
+        "Close Explore panel": "Fermer le panneau Explorer",
+        "Close note information": "Fermer les informations de la note",
+        "Information": "Informations",
+        "Connections": "Connexions"
     },
     "pluralForm": "nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;"
 }

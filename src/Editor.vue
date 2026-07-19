@@ -1,7 +1,13 @@
 <template>
 	<div id="diary-editor">
 		<div id="entry-title">
-			<span>{{ unsavedMarker }}{{ title }}</span>
+			<div class="entry-date-heading">
+				<strong>
+					{{ unsavedMarker }}{{ dateLabel }}
+				</strong>
+
+				<span>{{ weekdayLabel }}</span>
+			</div>
 
 			<span v-if="status === 'saving'" class="save-status">
 				Guardando…
@@ -47,6 +53,65 @@
 					{{ t('journalnotes', 'Cancel') }}
 				</button>
 			</div>
+		</div>
+
+		<div
+			v-if="wikiAutocompleteOpen"
+			class="wiki-autocomplete"
+			role="listbox"
+			:aria-label="t('journalnotes', 'Linked note suggestions')">
+			<div class="wiki-autocomplete__header">
+				<span>{{ t('journalnotes', 'Link to a note') }}</span>
+				<small>[[{{ wikiAutocompleteQuery }}</small>
+			</div>
+
+			<button
+				v-for="(suggestion, index) in wikiAutocompleteSuggestions"
+				:key="`${suggestion.date}-${suggestion.title}`"
+				type="button"
+				class="wiki-autocomplete__item"
+				:class="{
+					'wiki-autocomplete__item--active':
+						index === wikiAutocompleteIndex,
+				}"
+				role="option"
+				:aria-selected="index === wikiAutocompleteIndex"
+				@pointerdown.prevent="selectWikiSuggestion(suggestion)">
+				<strong>{{ suggestion.title }}</strong>
+
+				<small v-if="suggestion.date">
+					{{ formatWikiSuggestionDate(suggestion.date) }}
+				</small>
+
+				<span v-if="suggestion.excerpt">
+					{{ cleanWikiSuggestionExcerpt(suggestion.excerpt) }}
+				</span>
+			</button>
+
+			<div
+				v-if="wikiAutocompleteLoading"
+				class="wiki-autocomplete__empty">
+				{{ t('journalnotes', 'Searching notes…') }}
+			</div>
+
+			<button
+				v-else-if="
+					wikiAutocompleteQuery
+						&& wikiAutocompleteSuggestions.length === 0
+				"
+				type="button"
+				class="wiki-autocomplete__create"
+				@pointerdown.prevent="
+					showCreateLinkedNote(wikiAutocompleteQuery)
+				">
+				{{
+					t(
+						'journalnotes',
+						'Create note: {title}',
+						{ title: wikiAutocompleteQuery },
+					)
+				}}
+			</button>
 		</div>
 
 		<!-- La clave obliga a Vue a crear un contenedor nuevo por fecha. -->
@@ -104,6 +169,15 @@ export default {
 			pendingLinkedTitle: '',
 			linkedNoteDate: moment().format('YYYY-MM-DD'),
 			creatingLinkedNote: false,
+			wikiLinkStateRequestId: 0,
+			wikiAutocompleteOpen: false,
+			wikiAutocompleteQuery: '',
+			wikiAutocompleteSuggestions: [],
+			wikiAutocompleteIndex: 0,
+			wikiAutocompleteLoading: false,
+			wikiAutocompleteTimeout: null,
+			wikiAutocompleteRequestId: 0,
+			editorKeydownHandler: null,
 		}
 	},
 
@@ -112,9 +186,12 @@ export default {
 			return moment().format('YYYY-MM-DD')
 		},
 
-		title() {
-			const day = moment(this.date)
-			return `${day.format('dddd')} - ${day.format('LL')}`
+		dateLabel() {
+			return moment(this.date).format('LL')
+		},
+
+		weekdayLabel() {
+			return moment(this.date).format('dddd')
 		},
 
 		unsavedMarker() {
@@ -150,6 +227,10 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Aplica una plantilla a la entrada actual y la guarda.
+		 * Journal.vue puede invocarlo mediante this.$refs.editor.
+		 */
 		async loadEntry(entryDate) {
 			const sequence = ++this.loadSequence
 
@@ -216,6 +297,7 @@ export default {
 					readOnly: false,
 
 					onUpdate: (update) => {
+
 						if (
 							this.isSettingContent
 							|| !this.saveArmed
@@ -268,6 +350,12 @@ export default {
 					this.isSettingContent = false
 					this.status = 'loaded'
 
+					window.setTimeout(() => {
+						if (sequence === this.loadSequence) {
+							this.refreshWikiLinkStates()
+						}
+					}, 100)
+
 					/*
 					 * Text emite transacciones internas durante la carga.
 					 * Esperamos un momento antes de considerar cambios del usuario.
@@ -293,6 +381,175 @@ export default {
 				this.isSettingContent = false
 				this.status = 'error'
 			}
+		},
+
+		async refreshWikiLinkStates() {
+			const container = this.$refs.textEditor
+
+			if (!container) {
+				return
+			}
+
+			const links = Array.from(
+				container.querySelectorAll('a[iswikilink]'),
+			)
+
+			if (links.length === 0) {
+				return
+			}
+
+			const requestId = ++this.wikiLinkStateRequestId
+			const linksByTitle = new Map()
+
+			for (const link of links) {
+				const title = String(
+					link.getAttribute('data-md-href')
+						|| link.getAttribute('href')
+						|| link.textContent
+						|| '',
+				).trim()
+
+				if (!title) {
+					continue
+				}
+
+				link.classList.remove(
+					'journal-wikilink--found',
+					'journal-wikilink--missing',
+					'journal-wikilink--multiple',
+				)
+
+				link.classList.add('journal-wikilink--checking')
+
+				if (!linksByTitle.has(title)) {
+					linksByTitle.set(title, [])
+				}
+
+				linksByTitle.get(title).push(link)
+			}
+
+			await Promise.all(
+				Array.from(linksByTitle.entries()).map(
+					async ([title, titleLinks]) => {
+						let status = 'not_found'
+						let matches = []
+
+						try {
+							const response = await axios.get(
+								generateUrl(
+									'apps/journalnotes/resolve-note',
+								),
+								{
+									params: { title },
+								},
+							)
+
+							const data = response.data || {}
+
+							status = String(
+								data.status || 'not_found',
+							)
+
+							matches = Array.isArray(data.matches)
+								? data.matches
+								: []
+						} catch (error) {
+							// eslint-disable-next-line no-console
+							console.error(
+								t(
+									'journalnotes',
+									'Could not resolve the linked note',
+								),
+								error,
+							)
+						}
+
+						if (
+							requestId !== this.wikiLinkStateRequestId
+							|| !this.$refs.textEditor
+						) {
+							return
+						}
+
+						const className = status === 'found'
+							? 'journal-wikilink--found'
+							: status === 'multiple'
+								? 'journal-wikilink--multiple'
+								: 'journal-wikilink--missing'
+
+						let tooltip = ''
+
+						if (
+							status === 'found'
+							&& matches.length === 1
+						) {
+							const match = matches[0] || {}
+							const matchTitle = String(
+								match.title || title,
+							).trim()
+
+							const formattedDate = match.date
+								? moment(match.date).format('LL')
+								: ''
+
+							/*
+							 * Convertimos enlaces Markdown y secuencias
+							 * escapadas en texto legible para el tooltip.
+							 */
+							const excerpt = String(
+								match.excerpt || '',
+							)
+								.replace(
+									/\[([^\]]+)\]\([^)]+\)/g,
+									'$1',
+								)
+								.replace(/\\([\[\]])/g, '$1')
+								.replace(/\s+/g, ' ')
+								.trim()
+								.substring(0, 180)
+
+							tooltip = [
+								matchTitle,
+								formattedDate,
+								excerpt,
+							]
+								.filter(Boolean)
+								.join('\n')
+						} else if (status === 'multiple') {
+							tooltip = [
+								`${matches.length}`,
+								t(
+									'journalnotes',
+									'Several notes use this title',
+								),
+								title,
+							]
+								.filter(Boolean)
+								.join(' · ')
+						} else {
+							tooltip = [
+								t(
+									'journalnotes',
+									'Create note',
+								),
+								title,
+							]
+								.filter(Boolean)
+								.join(': ')
+						}
+
+						for (const link of titleLinks) {
+							link.classList.remove(
+								'journal-wikilink--checking',
+							)
+
+							link.classList.add(className)
+							link.dataset.journalLinkStatus = status
+							link.title = tooltip
+						}
+					},
+				),
+			)
 		},
 
 		async handleEditorClick(event) {
@@ -600,6 +857,7 @@ export default {
 
 		async destroyEditor() {
 			this.saveArmed = false
+			this.wikiLinkStateRequestId++
 			clearTimeout(this.saveTimeout)
 			this.saveTimeout = null
 
@@ -653,11 +911,34 @@ export default {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		min-height: 54px;
-		padding: 14px 28px;
-		font-size: 18px;
-		font-weight: 700;
+		min-height: 62px;
+		padding: 10px 28px;
 		border-bottom: 1px solid var(--color-border);
+		box-sizing: border-box;
+	}
+
+	.entry-date-heading {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: 2px;
+
+		strong {
+			overflow: hidden;
+			font-size: 18px;
+			font-weight: 700;
+			line-height: 1.25;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		span {
+			color: var(--color-text-maxcontrast);
+			font-size: 13px;
+			font-weight: 500;
+			line-height: 1.2;
+			text-transform: capitalize;
+		}
 	}
 
 	.save-status {
@@ -673,7 +954,7 @@ export default {
 	.text-editor {
 		width: 100%;
 		min-width: 0;
-		height: calc(100% - 54px);
+		height: calc(100% - 62px);
 		min-height: 65vh;
 		box-sizing: border-box;
 	}
@@ -689,7 +970,7 @@ export default {
 	#overlay {
 		display: flex;
 		position: absolute;
-		inset: 54px 0 0;
+		inset: 62px 0 0;
 		z-index: 100;
 		align-items: center;
 		justify-content: center;
@@ -789,6 +1070,102 @@ export default {
 
 .link-notice__actions button {
 	min-height: 36px;
+}
+
+.text-editor a[iswikilink] {
+	text-underline-offset: 3px;
+	transition:
+		color 120ms ease,
+		text-decoration-color 120ms ease;
+}
+
+.text-editor a.journal-wikilink--checking {
+	opacity: 0.75;
+}
+
+.text-editor a.journal-wikilink--found {
+	color: var(--color-primary-element);
+	text-decoration-style: solid;
+	cursor: pointer;
+}
+
+.text-editor a.journal-wikilink--missing {
+	color: var(--color-text-maxcontrast);
+	text-decoration-line: underline;
+	text-decoration-style: dashed;
+	text-decoration-color: var(--color-text-maxcontrast);
+	cursor: pointer;
+}
+
+.text-editor a.journal-wikilink--multiple {
+	color: var(--color-warning-text);
+	text-decoration-line: underline;
+	text-decoration-style: double;
+	text-decoration-color: var(--color-warning);
+	cursor: pointer;
+}
+
+.wiki-autocomplete {
+	position: absolute;
+	z-index: 1200;
+	top: 112px;
+	left: 48px;
+	width: min(420px, calc(100% - 96px));
+	max-height: 360px;
+	overflow-y: auto;
+	padding: 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
+	box-shadow: 0 8px 28px rgb(0 0 0 / 30%);
+}
+
+.wiki-autocomplete__header {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 6px 10px 10px;
+	color: var(--color-text-maxcontrast);
+}
+
+.wiki-autocomplete__item,
+.wiki-autocomplete__create {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	min-height: 54px;
+	padding: 8px 10px;
+	border: 0;
+	border-radius: var(--border-radius);
+	background: transparent;
+	color: var(--color-main-text);
+	text-align: left;
+}
+
+.wiki-autocomplete__item:hover,
+.wiki-autocomplete__item--active,
+.wiki-autocomplete__create:hover {
+	background: var(--color-background-hover);
+}
+
+.wiki-autocomplete__item small {
+	color: var(--color-text-maxcontrast);
+}
+
+.wiki-autocomplete__item span {
+	display: block;
+	max-width: 100%;
+	overflow: hidden;
+	color: var(--color-text-maxcontrast);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wiki-autocomplete__empty {
+	padding: 14px 10px;
+	color: var(--color-text-maxcontrast);
 }
 
 </style>

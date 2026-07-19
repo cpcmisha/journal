@@ -1,10 +1,33 @@
 OC.L10N.register(
     "journalnotes",
-    {
-    "Export" : "Exportar"	"This linked note has not been created yet." : "Esta nota enlazada todavía no ha sido creada.",
-	"You are already viewing this note." : "Ya estás viendo esta nota.",
-	"Could not open the linked note." : "No se pudo abrir la nota enlazada.",
-	"Several notes use this title. Select a date from Relations." : "Varias notas usan este título. Selecciona una fecha desde Relaciones.",
-
+{
+    "Export": "Exportar",
+    "This linked note has not been created yet.": "Esta nota enlazada todavía no ha sido creada.",
+    "You are already viewing this note.": "Ya estás viendo esta nota.",
+    "Could not open the linked note.": "No se pudo abrir la nota enlazada.",
+    "Several notes use this title. Select a date from Relations.": "Varias notas usan este título. Selecciona una fecha desde Relaciones.",
+    "Note": "Nota",
+    "Related notes": "Notas relacionadas",
+    "Organization": "Organización",
+    "This note links to": "Esta nota enlaza a",
+    "Notes linking here": "Notas que enlazan aquí",
+    "Explore": "Explorar",
+    "Search notes": "Buscar notas",
+    "Tags": "Etiquetas",
+    "Relations": "Relaciones",
+    "Links from this note": "Enlaces desde esta nota",
+    "Links to this note": "Enlaces hacia esta nota",
+    "You can assign several categories.": "Puedes asignar varias categorías.",
+    "Title": "Título",
+    "This note does not link to other notes yet.": "Esta nota todavía no enlaza a otras notas.",
+    "No other entries link to this note yet.": "Todavía no hay otras entradas que enlacen a esta nota.",
+    "Open Explore panel": "Abrir panel Explorar",
+    "Open note information": "Abrir información de la nota",
+    "Close side panel": "Cerrar panel lateral",
+    "Close Explore panel": "Cerrar panel Explorar",
+    "Close note information": "Cerrar información de la nota",
+    "Information": "Información",
+    "Connections": "Conexiones",
+    "Give this note a title": "Dale un título a esta nota"
 },
-"nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");
+    "nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;");
