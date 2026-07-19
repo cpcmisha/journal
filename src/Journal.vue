@@ -1615,20 +1615,14 @@ export default {
 		}
 	}
 
-	.title-section > label::before {
-		margin-right: 6px;
-		content: "📝";
-	}
+
 
 	.categories-section > label::before {
 		margin-right: 6px;
 		content: "📂";
 	}
 
-	.system-tags-section > label::before {
-		margin-right: 6px;
-		content: "🏷";
-	}
+
 
 	.inspector-header {
 		display: flex;
