@@ -141,6 +141,11 @@ import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
 
 import { resolveLinkedNote } from './editor/linkedNotes'
+import {
+	cleanWikiLinkExcerpt,
+	getWikiLinkClass,
+	getWikiLinkTitle,
+} from './editor/wikiLinks'
 
 export default {
 	name: 'Editor',
@@ -404,12 +409,7 @@ export default {
 			const linksByTitle = new Map()
 
 			for (const link of links) {
-				const title = String(
-					link.getAttribute('data-md-href')
-						|| link.getAttribute('href')
-						|| link.textContent
-						|| '',
-				).trim()
+				const title = getWikiLinkTitle(link)
 
 				if (!title) {
 					continue
@@ -459,11 +459,7 @@ export default {
 							return
 						}
 
-						const className = status === 'found'
-							? 'journal-wikilink--found'
-							: status === 'multiple'
-								? 'journal-wikilink--multiple'
-								: 'journal-wikilink--missing'
+						const className = getWikiLinkClass(status)
 
 						let tooltip = ''
 
@@ -484,17 +480,9 @@ export default {
 							 * Convertimos enlaces Markdown y secuencias
 							 * escapadas en texto legible para el tooltip.
 							 */
-							const excerpt = String(
-								match.excerpt || '',
+							const excerpt = cleanWikiLinkExcerpt(
+								match.excerpt,
 							)
-								.replace(
-									/\[([^\]]+)\]\([^)]+\)/g,
-									'$1',
-								)
-								.replace(/\\([\[\]])/g, '$1')
-								.replace(/\s+/g, ' ')
-								.trim()
-								.substring(0, 180)
 
 							tooltip = [
 								matchTitle,
@@ -565,12 +553,7 @@ export default {
 			 * Nextcloud Text guarda el título original del wikilink
 			 * en data-md-href. El atributo href puede ser relativo.
 			 */
-			const linkedTitle = String(
-				link.getAttribute('data-md-href')
-					|| link.getAttribute('href')
-					|| link.textContent
-					|| '',
-			).trim()
+			const linkedTitle = getWikiLinkTitle(link)
 
 			if (!linkedTitle) {
 				return
