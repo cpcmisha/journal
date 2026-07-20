@@ -18,42 +18,15 @@
 			</span>
 		</div>
 
-		<div
-			v-if="linkNotice"
-			class="link-notice"
-			role="status">
-			<span>{{ linkNotice }}</span>
-
-			<div
-				v-if="pendingLinkedTitle"
-				class="link-notice__actions">
-				<input
-					v-model="linkedNoteDate"
-					type="date"
-					class="link-notice__date"
-					:max="today"
-					:aria-label="t('journalnotes', 'Date for the new linked note')">
-
-				<button
-					type="button"
-					class="primary"
-					:disabled="creatingLinkedNote"
-					@click="createLinkedNote">
-					{{
-						creatingLinkedNote
-							? t('journalnotes', 'Creating note…')
-							: t('journalnotes', 'Create note')
-					}}
-				</button>
-
-				<button
-					type="button"
-					:disabled="creatingLinkedNote"
-					@click="dismissLinkNotice">
-					{{ t('journalnotes', 'Cancel') }}
-				</button>
-			</div>
-		</div>
+		<LinkNotice
+			:message="linkNotice"
+			:pending-title="pendingLinkedTitle"
+			:date="linkedNoteDate"
+			:today="today"
+			:creating="creatingLinkedNote"
+			@update:date="linkedNoteDate = $event"
+			@create="createLinkedNote"
+			@cancel="dismissLinkNotice" />
 
 		<div
 			v-if="wikiAutocompleteOpen"
@@ -140,6 +113,8 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
 
+import LinkNotice from './components/Editor/LinkNotice'
+
 import { resolveLinkedNote } from './editor/linkedNotes'
 import {
 	applyWikiLinkState,
@@ -151,6 +126,10 @@ import {
 
 export default {
 	name: 'Editor',
+
+	components: {
+		LinkNotice,
+	},
 
 	props: {
 		date: {
@@ -953,37 +932,6 @@ export default {
 #diary-editor .text-editor .ProseMirror {
 	padding-right: 40px !important;
 	padding-left: 40px !important;
-}
-
-.link-notice {
-	margin: 8px 16px;
-	padding: 10px 12px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	background: var(--color-background-dark);
-	color: var(--color-main-text);
-	font-size: 14px;
-}
-
-.link-notice__actions {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-top: 10px;
-}
-
-.link-notice__date {
-	min-height: 36px;
-	padding: 4px 10px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-}
-
-.link-notice__actions button {
-	min-height: 36px;
 }
 
 .text-editor a[iswikilink] {
