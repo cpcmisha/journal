@@ -121,9 +121,6 @@ export default {
 			wikiAutocompleteSuggestions: [],
 			wikiAutocompleteIndex: 0,
 			wikiAutocompleteLoading: false,
-			wikiAutocompleteTimeout: null,
-			wikiAutocompleteRequestId: 0,
-			editorKeydownHandler: null,
 		}
 	},
 

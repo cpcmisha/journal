@@ -384,6 +384,7 @@ import { generateUrl } from '@nextcloud/router'
 
 
 import Editor from './Editor'
+import EntryInspector from './components/Inspector/EntryInspector'
 import DatesNavigation from './components/Navigation/DatesNavigation'
 import ExplorePanel from './components/Explore/ExplorePanel'
 
@@ -400,7 +401,6 @@ import {
 	getTagCatalog,
 	saveEntryTags,
 } from './services/tags'
-import EntryInspector from './components/Inspector/EntryInspector'
 
 import {
 	buildEntryMetadata,
@@ -831,8 +831,6 @@ export default {
 				this.categories = []
 				this.categoryInput = ''
 				this.selectedSystemTags = []
-				this.backlinks = []
-				this.backlinksStatus = null
 
 				// eslint-disable-next-line no-console
 				console.error(
