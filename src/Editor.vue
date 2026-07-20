@@ -61,12 +61,16 @@
 
 <script>
 import { markRaw } from 'vue'
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
 
 import LinkNotice from './components/Editor/LinkNotice'
 import WikiAutocomplete from './components/Editor/WikiAutocomplete'
+
+import {
+	entryHasContent,
+	getEntry,
+	saveEntry,
+} from './services/entries'
 
 import { resolveLinkedNote } from './editor/linkedNotes'
 import {
@@ -187,15 +191,13 @@ export default {
 			await this.destroyEditor()
 
 			try {
-				const response = await axios.get(
-					generateUrl(`apps/journalnotes/entry/${entryDate}`),
-				)
+				const entry = await getEntry(entryDate)
 
 				if (sequence !== this.loadSequence) {
 					return
 				}
 
-				this.content = response.data.entryContent || ''
+				this.content = entry.entryContent || ''
 
 				/*
 				 * Fuerza un elemento DOM nuevo para cada fecha.
@@ -579,19 +581,9 @@ export default {
 				 * Journal solo admite una entrada por fecha.
 				 * Comprobamos que no exista contenido para evitar sobrescribirla.
 				 */
-				const existingResponse = await axios.get(
-					generateUrl(`apps/journalnotes/entry/${date}`),
-				)
+				const dateAlreadyUsed = await entryHasContent(date)
 
-				const existing = existingResponse.data || {}
-				const existingContent = String(
-					existing.entryContent || '',
-				).trim()
-
-				if (
-					existing.isEmpty !== true
-					&& existingContent !== ''
-				) {
+				if (dateAlreadyUsed) {
 					this.creatingLinkedNote = false
 					this.showJournalNotice(
 						t(
@@ -610,12 +602,10 @@ export default {
 					tags: [],
 				}
 
-				await axios.put(
-					generateUrl(`apps/journalnotes/entry/${date}`),
-					{
-						content: initialContent,
-						metadataJson: JSON.stringify(metadata),
-					},
+				await saveEntry(
+					date,
+					initialContent,
+					metadata,
 				)
 
 				this.dismissLinkNotice()
@@ -664,9 +654,9 @@ export default {
 			this.status = 'saving'
 
 			try {
-				const response = await axios.put(
-					generateUrl(`apps/journalnotes/entry/${entryDate}`),
-					{ content: markdown },
+				const response = await saveEntry(
+					entryDate,
+					markdown,
 				)
 
 				/*
@@ -684,9 +674,9 @@ export default {
 				this.$emit(
 					'entry-edit',
 					entryDate,
-					response.data.isEmpty
+					response.isEmpty
 						? false
-						: response.data.entryContent,
+						: response.entryContent,
 				)
 			} catch (error) {
 				// eslint-disable-next-line no-console
