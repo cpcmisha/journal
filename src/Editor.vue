@@ -140,6 +140,8 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
 
+import { resolveLinkedNote } from './editor/linkedNotes'
+
 export default {
 	name: 'Editor',
 
@@ -435,24 +437,10 @@ export default {
 						let matches = []
 
 						try {
-							const response = await axios.get(
-								generateUrl(
-									'apps/journalnotes/resolve-note',
-								),
-								{
-									params: { title },
-								},
-							)
+							const data = await resolveLinkedNote(title)
 
-							const data = response.data || {}
-
-							status = String(
-								data.status || 'not_found',
-							)
-
-							matches = Array.isArray(data.matches)
-								? data.matches
-								: []
+							status = data.status
+							matches = data.matches
 						} catch (error) {
 							// eslint-disable-next-line no-console
 							console.error(
@@ -597,19 +585,8 @@ export default {
 			event.stopImmediatePropagation?.()
 
 			try {
-				const response = await axios.get(
-					generateUrl('apps/journalnotes/resolve-note'),
-					{
-						params: {
-							title: linkedTitle,
-						},
-					},
-				)
-
-				const data = response.data || {}
-				const matches = Array.isArray(data.matches)
-					? data.matches
-					: []
+				const data = await resolveLinkedNote(linkedTitle)
+				const matches = data.matches
 
 				if (
 					data.status === 'found'
