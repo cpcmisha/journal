@@ -142,7 +142,7 @@ import moment from '@nextcloud/moment'
 
 import { resolveLinkedNote } from './editor/linkedNotes'
 import {
-	cleanWikiLinkExcerpt,
+	buildWikiLinkTooltip,
 	getWikiLinkClass,
 	getWikiLinkTitle,
 	groupWikiLinksByTitle,
@@ -451,58 +451,23 @@ export default {
 
 						const className = getWikiLinkClass(status)
 
-						let tooltip = ''
-
-						if (
-							status === 'found'
-							&& matches.length === 1
-						) {
-							const match = matches[0] || {}
-							const matchTitle = String(
-								match.title || title,
-							).trim()
-
-							const formattedDate = match.date
-								? moment(match.date).format('LL')
-								: ''
-
-							/*
-							 * Convertimos enlaces Markdown y secuencias
-							 * escapadas en texto legible para el tooltip.
-							 */
-							const excerpt = cleanWikiLinkExcerpt(
-								match.excerpt,
-							)
-
-							tooltip = [
-								matchTitle,
-								formattedDate,
-								excerpt,
-							]
-								.filter(Boolean)
-								.join('\n')
-						} else if (status === 'multiple') {
-							tooltip = [
-								`${matches.length}`,
-								t(
+						const tooltip = buildWikiLinkTooltip({
+							status,
+							matches,
+							title,
+							formatDate: date =>
+								moment(date).format('LL'),
+							labels: {
+								multiple: t(
 									'journalnotes',
 									'Several notes use this title',
 								),
-								title,
-							]
-								.filter(Boolean)
-								.join(' · ')
-						} else {
-							tooltip = [
-								t(
+								create: t(
 									'journalnotes',
 									'Create note',
 								),
-								title,
-							]
-								.filter(Boolean)
-								.join(': ')
-						}
+							},
+						})
 
 						for (const link of titleLinks) {
 							link.classList.remove(

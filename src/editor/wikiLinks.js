@@ -61,3 +61,66 @@ export function groupWikiLinksByTitle(links) {
 
 	return linksByTitle
 }
+
+/**
+ * Construye el tooltip de un wikilink según su estado.
+ *
+ * @param {object} options Opciones del tooltip.
+ * @param {string} options.status Estado del enlace.
+ * @param {object[]} options.matches Coincidencias encontradas.
+ * @param {string} options.title Título original del enlace.
+ * @param {Function} options.formatDate Función para formatear fechas.
+ * @param {object} options.labels Textos traducidos.
+ * @return {string} Tooltip listo para asignar al enlace.
+ */
+export function buildWikiLinkTooltip({
+	status,
+	matches,
+	title,
+	formatDate,
+	labels,
+}) {
+	if (
+		status === 'found'
+		&& matches.length === 1
+	) {
+		const match = matches[0] || {}
+
+		const matchTitle = String(
+			match.title || title,
+		).trim()
+
+		const formattedDate = match.date
+			? formatDate(match.date)
+			: ''
+
+		const excerpt = cleanWikiLinkExcerpt(
+			match.excerpt,
+		)
+
+		return [
+			matchTitle,
+			formattedDate,
+			excerpt,
+		]
+			.filter(Boolean)
+			.join('\n')
+	}
+
+	if (status === 'multiple') {
+		return [
+			`${matches.length}`,
+			labels.multiple,
+			title,
+		]
+			.filter(Boolean)
+			.join(' · ')
+	}
+
+	return [
+		labels.create,
+		title,
+	]
+		.filter(Boolean)
+		.join(': ')
+}
