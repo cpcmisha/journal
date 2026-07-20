@@ -402,6 +402,11 @@ import {
 } from './services/tags'
 import EntryInspector from './components/Inspector/EntryInspector'
 
+import {
+	buildEntryMetadata,
+	normalizeEntryMetadata,
+} from './utils/entryMetadata'
+
 export default {
 	name: 'Journal',
 
@@ -811,26 +816,12 @@ export default {
 				this.currentEntryContent
 					= entry.entryContent || ''
 
-				const metadata = entry.metadata || {}
+				const metadata = normalizeEntryMetadata(
+					entry.metadata,
+				)
 
-				this.noteTitle = typeof metadata.title === 'string'
-					? metadata.title.trim()
-					: ''
-
-				if (Array.isArray(metadata.categories)) {
-					this.categories = [...new Set(
-						metadata.categories
-							.map(item => String(item).trim())
-							.filter(Boolean),
-					)]
-				} else if (
-					typeof metadata.category === 'string'
-					&& metadata.category.trim() !== ''
-				) {
-					this.categories = [metadata.category.trim()]
-				} else {
-					this.categories = []
-				}
+				this.noteTitle = metadata.title
+				this.categories = metadata.categories
 
 				await this.fetchEntrySystemTags(this.date)
 				await this.fetchRelations(this.date)
@@ -1189,15 +1180,11 @@ export default {
 			}
 
 			const entryDate = this.date
-			const metadata = {
-				title: this.noteTitle.trim(),
+			const metadata = buildEntryMetadata({
+				title: this.noteTitle,
 				categories: this.categories,
-				/*
-				 * Copia de búsqueda. La relación oficial se guarda
-				 * mediante ISystemTagObjectMapper.
-				 */
-				tags: this.selectedSystemTags.map(tag => tag.name),
-			}
+				systemTags: this.selectedSystemTags,
+			})
 
 			try {
 				await saveEntry(
@@ -1219,11 +1206,9 @@ export default {
 				)
 
 				if (entry) {
-					entry.title = this.noteTitle.trim()
-					entry.categories = [...this.categories]
-					entry.tags = this.selectedSystemTags.map(
-						tag => tag.name,
-					)
+					entry.title = metadata.title
+					entry.categories = [...metadata.categories]
+					entry.tags = [...metadata.tags]
 				}
 
 				window.setTimeout(() => {
