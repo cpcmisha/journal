@@ -387,6 +387,9 @@ import { generateUrl } from '@nextcloud/router'
 import Editor from './Editor'
 import DatesNavigation from './components/Navigation/DatesNavigation'
 import ExplorePanel from './components/Explore/ExplorePanel'
+
+import { searchEntries } from './services/search'
+import { getRelations } from './services/relations'
 import EntryInspector from './components/Inspector/EntryInspector'
 
 export default {
@@ -742,14 +745,9 @@ export default {
 			const requestId = ++this.searchRequestId
 
 			try {
-				const response = await axios.get(
-					generateUrl('apps/journalnotes/search'),
-					{
-						params: {
-							q: query,
-							limit: 100,
-						},
-					},
+				const results = await searchEntries(
+					query,
+					100,
 				)
 
 				if (
@@ -759,9 +757,7 @@ export default {
 					return
 				}
 
-				this.searchResults = Array.isArray(response.data)
-					? response.data
-					: []
+				this.searchResults = results
 
 				this.searchStatus = 'loaded'
 			} catch (error) {
@@ -868,14 +864,9 @@ export default {
 			this.relationsStatus = 'loading'
 
 			try {
-				const response = await axios.get(
-					generateUrl('apps/journalnotes/relations'),
-					{
-						params: {
-							date: entryDate,
-							limit: 100,
-						},
-					},
+				const relations = await getRelations(
+					entryDate,
+					100,
 				)
 
 				if (
@@ -885,16 +876,7 @@ export default {
 					return
 				}
 
-				const data = response.data || {}
-
-				this.relations = {
-					outgoing: Array.isArray(data.outgoing)
-						? data.outgoing
-						: [],
-					incoming: Array.isArray(data.incoming)
-						? data.incoming
-						: [],
-				}
+				this.relations = relations
 
 				this.relationsStatus = 'loaded'
 			} catch (error) {
