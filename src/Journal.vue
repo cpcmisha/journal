@@ -390,6 +390,12 @@ import ExplorePanel from './components/Explore/ExplorePanel'
 
 import { searchEntries } from './services/search'
 import { getRelations } from './services/relations'
+import {
+	createTag,
+	getEntryTags,
+	getTagCatalog,
+	saveEntryTags,
+} from './services/tags'
 import EntryInspector from './components/Inspector/EntryInspector'
 
 export default {
@@ -1012,13 +1018,7 @@ export default {
 
 		async fetchSystemTagsCatalog() {
 			try {
-				const response = await axios.get(
-					generateUrl('apps/journalnotes/system-tags'),
-				)
-
-				this.systemTagsCatalog = Array.isArray(response.data)
-					? response.data
-					: []
+				this.systemTagsCatalog = await getTagCatalog()
 			} catch (error) {
 				// eslint-disable-next-line no-console
 				console.error(
@@ -1032,19 +1032,13 @@ export default {
 			this.systemTagStatus = 'loading'
 
 			try {
-				const response = await axios.get(
-					generateUrl(
-						`apps/journalnotes/entry/${entryDate}/system-tags`,
-					),
-				)
+				const tags = await getEntryTags(entryDate)
 
 				if (entryDate !== this.date) {
 					return
 				}
 
-				this.selectedSystemTags = Array.isArray(response.data)
-					? response.data
-					: []
+				this.selectedSystemTags = tags
 
 				this.systemTagStatus = null
 			} catch (error) {
@@ -1108,12 +1102,7 @@ export default {
 			this.systemTagStatus = 'saving'
 
 			try {
-				const response = await axios.post(
-					generateUrl('apps/journalnotes/system-tags'),
-					{ name },
-				)
-
-				const tag = response.data
+				const tag = await createTag(name)
 
 				if (
 					tag
@@ -1156,24 +1145,16 @@ export default {
 			this.systemTagStatus = 'saving'
 
 			try {
-				const response = await axios.put(
-					generateUrl(
-						`apps/journalnotes/entry/${entryDate}/system-tags`,
-					),
-					{
-						tagIds: this.selectedSystemTags.map(
-							tag => String(tag.id),
-						),
-					},
+				const tags = await saveEntryTags(
+					entryDate,
+					this.selectedSystemTags.map(tag => tag.id),
 				)
 
 				if (entryDate !== this.date) {
 					return
 				}
 
-				this.selectedSystemTags = Array.isArray(response.data)
-					? response.data
-					: []
+				this.selectedSystemTags = tags
 
 				this.systemTagStatus = null
 
