@@ -59,3 +59,25 @@ export async function entryHasContent(date) {
 
 	return entry.isEmpty !== true && content !== ''
 }
+
+/**
+ * Obtiene las últimas entradas del diario.
+ *
+ * @param {number} limit Número máximo de entradas.
+ * @return {Promise<object[]>} Entradas normalizadas.
+ */
+export async function getRecentEntries(limit = 30) {
+	const normalizedLimit = Number.isFinite(Number(limit))
+		? Math.max(1, Number(limit))
+		: 30
+
+	const response = await axios.get(
+		generateUrl(
+			`apps/journalnotes/entries/${normalizedLimit}`,
+		),
+	)
+
+	return Array.isArray(response.data)
+		? response.data
+		: []
+}

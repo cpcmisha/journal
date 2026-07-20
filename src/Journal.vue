@@ -379,7 +379,6 @@ import {
 	NcContent,
 } from '@nextcloud/vue'
 
-import axios from '@nextcloud/axios'
 import moment from '@nextcloud/moment'
 import { generateUrl } from '@nextcloud/router'
 
@@ -388,6 +387,11 @@ import Editor from './Editor'
 import DatesNavigation from './components/Navigation/DatesNavigation'
 import ExplorePanel from './components/Explore/ExplorePanel'
 
+import {
+	getEntry,
+	getRecentEntries,
+	saveEntry,
+} from './services/entries'
 import { searchEntries } from './services/search'
 import { getRelations } from './services/relations'
 import {
@@ -784,15 +788,9 @@ export default {
 
 		async fetchPastEntries() {
 			try {
-				const response = await axios.get(
-					generateUrl(
-						`apps/journalnotes/entries/${this.pastEntriesAmount}`,
-					),
+				this.lastEntries = await getRecentEntries(
+					this.pastEntriesAmount,
 				)
-
-				this.lastEntries = Array.isArray(response.data)
-					? response.data
-					: []
 			} catch (error) {
 				// eslint-disable-next-line no-console
 				console.error(
@@ -808,14 +806,12 @@ export default {
 			this.tagInput = ''
 
 			try {
-				const response = await axios.get(
-					generateUrl(`apps/journalnotes/entry/${this.date}`),
-				)
+				const entry = await getEntry(this.date)
 
 				this.currentEntryContent
-					= response.data.entryContent || ''
+					= entry.entryContent || ''
 
-				const metadata = response.data.metadata || {}
+				const metadata = entry.metadata || {}
 
 				this.noteTitle = typeof metadata.title === 'string'
 					? metadata.title.trim()
@@ -1204,12 +1200,10 @@ export default {
 			}
 
 			try {
-				await axios.put(
-					generateUrl(`apps/journalnotes/entry/${entryDate}`),
-					{
-						content: this.currentEntryContent,
-						metadataJson: JSON.stringify(metadata),
-					},
+				await saveEntry(
+					entryDate,
+					this.currentEntryContent,
+					metadata,
 				)
 
 				if (entryDate !== this.date) {
