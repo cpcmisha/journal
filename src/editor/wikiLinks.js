@@ -124,3 +124,36 @@ export function buildWikiLinkTooltip({
 		.filter(Boolean)
 		.join(': ')
 }
+
+/**
+ * Aplica el estado visual y el tooltip a un wikilink.
+ *
+ * @param {HTMLElement|null} link Enlace renderizado.
+ * @param {object} options Opciones visuales.
+ * @param {string} options.status Estado del enlace.
+ * @param {string} options.className Clase CSS.
+ * @param {string} options.tooltip Texto del tooltip.
+ */
+export function applyWikiLinkState(
+	link,
+	{
+		status,
+		className,
+		tooltip,
+	},
+) {
+	if (!link) {
+		return
+	}
+
+	link.classList.remove(
+		'journal-wikilink--checking',
+		'journal-wikilink--found',
+		'journal-wikilink--missing',
+		'journal-wikilink--multiple',
+	)
+
+	link.classList.add(className)
+	link.dataset.journalLinkStatus = status
+	link.title = tooltip
+}

@@ -142,6 +142,7 @@ import moment from '@nextcloud/moment'
 
 import { resolveLinkedNote } from './editor/linkedNotes'
 import {
+	applyWikiLinkState,
 	buildWikiLinkTooltip,
 	getWikiLinkClass,
 	getWikiLinkTitle,
@@ -470,13 +471,11 @@ export default {
 						})
 
 						for (const link of titleLinks) {
-							link.classList.remove(
-								'journal-wikilink--checking',
-							)
-
-							link.classList.add(className)
-							link.dataset.journalLinkStatus = status
-							link.title = tooltip
+							applyWikiLinkState(link, {
+								status,
+								className,
+								tooltip,
+							})
 						}
 					},
 				),
