@@ -145,6 +145,7 @@ import {
 	cleanWikiLinkExcerpt,
 	getWikiLinkClass,
 	getWikiLinkTitle,
+	groupWikiLinksByTitle,
 } from './editor/wikiLinks'
 
 export default {
@@ -406,15 +407,8 @@ export default {
 			}
 
 			const requestId = ++this.wikiLinkStateRequestId
-			const linksByTitle = new Map()
 
 			for (const link of links) {
-				const title = getWikiLinkTitle(link)
-
-				if (!title) {
-					continue
-				}
-
 				link.classList.remove(
 					'journal-wikilink--found',
 					'journal-wikilink--missing',
@@ -422,13 +416,9 @@ export default {
 				)
 
 				link.classList.add('journal-wikilink--checking')
-
-				if (!linksByTitle.has(title)) {
-					linksByTitle.set(title, [])
-				}
-
-				linksByTitle.get(title).push(link)
 			}
+
+			const linksByTitle = groupWikiLinksByTitle(links)
 
 			await Promise.all(
 				Array.from(linksByTitle.entries()).map(

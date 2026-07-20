@@ -35,3 +35,29 @@ export function cleanWikiLinkExcerpt(
 		.trim()
 		.substring(0, maxLength)
 }
+
+/**
+ * Agrupa los wikilinks renderizados según su título.
+ *
+ * @param {HTMLElement[]} links Enlaces encontrados en el editor.
+ * @return {Map<string, HTMLElement[]>} Enlaces agrupados por título.
+ */
+export function groupWikiLinksByTitle(links) {
+	const linksByTitle = new Map()
+
+	for (const link of links) {
+		const title = getWikiLinkTitle(link)
+
+		if (!title) {
+			continue
+		}
+
+		if (!linksByTitle.has(title)) {
+			linksByTitle.set(title, [])
+		}
+
+		linksByTitle.get(title).push(link)
+	}
+
+	return linksByTitle
+}
