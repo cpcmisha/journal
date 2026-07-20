@@ -2,7 +2,7 @@
 <info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>journalnotes</id>
-    <name>Journal</name>
+    <name>Misha Journal</name>
     <summary>A Markdown journal and personal knowledge workspace for Nextcloud</summary>
     <description><![CDATA[
 Journal is a private Markdown journal and personal knowledge workspace for Nextcloud.
@@ -20,7 +20,7 @@ Features:
 
 Your content remains accessible as regular Markdown files inside your Nextcloud storage.
 ]]></description>
-    <version>1.0.0</version>
+    <version>0.2.0</version>
     <licence>AGPL-3.0-or-later</licence>
     <author mail="miguel@misha.pe" homepage="https://miguel.pe/">Miguel Torres</author>
     <namespace>JournalNotes</namespace>
@@ -46,7 +46,7 @@ Your content remains accessible as regular Markdown files inside your Nextcloud 
 <navigations>
         <navigation>
             <id>journalnotes</id>
-            <name>Journal</name>
+            <name>Misha Journal</name>
             <route>journalnotes.page.index</route>
             <icon>journal.svg</icon>
         </navigation>
