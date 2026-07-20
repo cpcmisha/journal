@@ -28,64 +28,16 @@
 			@create="createLinkedNote"
 			@cancel="dismissLinkNotice" />
 
-		<div
-			v-if="wikiAutocompleteOpen"
-			class="wiki-autocomplete"
-			role="listbox"
-			:aria-label="t('journalnotes', 'Linked note suggestions')">
-			<div class="wiki-autocomplete__header">
-				<span>{{ t('journalnotes', 'Link to a note') }}</span>
-				<small>[[{{ wikiAutocompleteQuery }}</small>
-			</div>
-
-			<button
-				v-for="(suggestion, index) in wikiAutocompleteSuggestions"
-				:key="`${suggestion.date}-${suggestion.title}`"
-				type="button"
-				class="wiki-autocomplete__item"
-				:class="{
-					'wiki-autocomplete__item--active':
-						index === wikiAutocompleteIndex,
-				}"
-				role="option"
-				:aria-selected="index === wikiAutocompleteIndex"
-				@pointerdown.prevent="selectWikiSuggestion(suggestion)">
-				<strong>{{ suggestion.title }}</strong>
-
-				<small v-if="suggestion.date">
-					{{ formatWikiSuggestionDate(suggestion.date) }}
-				</small>
-
-				<span v-if="suggestion.excerpt">
-					{{ cleanWikiSuggestionExcerpt(suggestion.excerpt) }}
-				</span>
-			</button>
-
-			<div
-				v-if="wikiAutocompleteLoading"
-				class="wiki-autocomplete__empty">
-				{{ t('journalnotes', 'Searching notes…') }}
-			</div>
-
-			<button
-				v-else-if="
-					wikiAutocompleteQuery
-						&& wikiAutocompleteSuggestions.length === 0
-				"
-				type="button"
-				class="wiki-autocomplete__create"
-				@pointerdown.prevent="
-					showCreateLinkedNote(wikiAutocompleteQuery)
-				">
-				{{
-					t(
-						'journalnotes',
-						'Create note: {title}',
-						{ title: wikiAutocompleteQuery },
-					)
-				}}
-			</button>
-		</div>
+		<WikiAutocomplete
+			:visible="wikiAutocompleteOpen"
+			:query="wikiAutocompleteQuery"
+			:loading="wikiAutocompleteLoading"
+			:suggestions="wikiAutocompleteSuggestions"
+			:selected-index="wikiAutocompleteIndex"
+			:format-date="formatWikiSuggestionDate"
+			:clean-excerpt="cleanWikiSuggestionExcerpt"
+			@select="selectWikiSuggestion"
+			@create="showCreateLinkedNote" />
 
 		<!-- La clave obliga a Vue a crear un contenedor nuevo por fecha. -->
 		<div
@@ -114,6 +66,7 @@ import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
 
 import LinkNotice from './components/Editor/LinkNotice'
+import WikiAutocomplete from './components/Editor/WikiAutocomplete'
 
 import { resolveLinkedNote } from './editor/linkedNotes'
 import {
@@ -129,6 +82,7 @@ export default {
 
 	components: {
 		LinkNotice,
+		WikiAutocomplete,
 	},
 
 	props: {
@@ -965,69 +919,6 @@ export default {
 	text-decoration-style: double;
 	text-decoration-color: var(--color-warning);
 	cursor: pointer;
-}
-
-.wiki-autocomplete {
-	position: absolute;
-	z-index: 1200;
-	top: 112px;
-	left: 48px;
-	width: min(420px, calc(100% - 96px));
-	max-height: 360px;
-	overflow-y: auto;
-	padding: 8px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
-	box-shadow: 0 8px 28px rgb(0 0 0 / 30%);
-}
-
-.wiki-autocomplete__header {
-	display: flex;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 6px 10px 10px;
-	color: var(--color-text-maxcontrast);
-}
-
-.wiki-autocomplete__item,
-.wiki-autocomplete__create {
-	display: flex;
-	width: 100%;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 2px;
-	min-height: 54px;
-	padding: 8px 10px;
-	border: 0;
-	border-radius: var(--border-radius);
-	background: transparent;
-	color: var(--color-main-text);
-	text-align: left;
-}
-
-.wiki-autocomplete__item:hover,
-.wiki-autocomplete__item--active,
-.wiki-autocomplete__create:hover {
-	background: var(--color-background-hover);
-}
-
-.wiki-autocomplete__item small {
-	color: var(--color-text-maxcontrast);
-}
-
-.wiki-autocomplete__item span {
-	display: block;
-	max-width: 100%;
-	overflow: hidden;
-	color: var(--color-text-maxcontrast);
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.wiki-autocomplete__empty {
-	padding: 14px 10px;
-	color: var(--color-text-maxcontrast);
 }
 
 
