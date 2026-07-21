@@ -428,8 +428,31 @@ export default {
 				return
 			}
 
+			/*
+			 * Los enlaces externos deben conservar el comportamiento
+			 * normal de Nextcloud Text y del navegador, aunque el editor
+			 * les haya asignado accidentalmente iswikilink.
+			 */
+			const href = String(
+				link.getAttribute('href') || '',
+			).trim()
+
+			const markdownHref = String(
+				link.getAttribute('data-md-href') || '',
+			).trim()
+
+			const isExternalLink = /^(?:https?:|mailto:|tel:|ftp:)/i
+				.test(href)
+				|| /^(?:https?:|mailto:|tel:|ftp:)/i
+					.test(markdownHref)
+				|| href.startsWith('//')
+				|| markdownHref.startsWith('//')
+
+			if (isExternalLink) {
+				return
+			}
+
 			const isWikiLink = link.getAttribute('iswikilink') === 'true'
-				|| link.hasAttribute('iswikilink')
 
 			if (!isWikiLink) {
 				return
