@@ -76,6 +76,11 @@ OC.L10N.register(
     "Clear filters": "Limpiar filtros",
     "Create note": "Crear nota",
     "Cancel": "Cancelar",
-    "This date already contains an entry. Choose another date.": "Esta fecha ya contiene una entrada. Elige otra fecha."
+    "This date already contains an entry. Choose another date.": "Esta fecha ya contiene una entrada. Elige otra fecha.",
+    "Today": "Hoy",
+    "Write today": "Escribir hoy",
+    "Open Journal": "Abrir Journal",
+    "You have not written today yet.": "Todavía no has escrito hoy.",
+    "You have not written any Journal entries yet.": "Todavía no has escrito ninguna entrada en Journal."
 },
     "nplurals=2; plural=(n != 1);");
