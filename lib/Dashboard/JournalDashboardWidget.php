@@ -27,8 +27,8 @@ final class JournalDashboardWidget implements
     /**
      * Reservamos espacio para el estado de hoy y el botón principal.
      */
-    private const DEFAULT_LIMIT = 5;
-    private const MAX_LIMIT = 5;
+    private const DEFAULT_LIMIT = 7;
+    private const MAX_LIMIT = 7;
 
     public function __construct(
         private JournalRepository $journalRepository,
