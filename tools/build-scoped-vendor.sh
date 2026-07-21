@@ -105,7 +105,7 @@ require 'vendor-scoped/autoload.php';
 \$pdf = new OCA\\JournalNotes\\Vendor\\Dompdf\\Dompdf();
 
 \$pdf->loadHtml(
-	'<h1>Misha Journal</h1>'
+	'<h1>Journal</h1>'
 	. '<p>Prueba automática del vendor aislado.</p>'
 );
 

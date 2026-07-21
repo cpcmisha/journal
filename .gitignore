@@ -20,3 +20,6 @@ __pycache__/
 *.pyc
 *.bak-*
 *.tmp
+
+# Generated release packages
+/dist/
