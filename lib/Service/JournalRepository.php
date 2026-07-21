@@ -89,6 +89,7 @@ final class JournalRepository
 
                 $result[] = [
                     'date' => $hydrated['entryDate'],
+                    'title' => $hydrated['title'] ?? '',
                     'excerpt' => mb_strimwidth(
                         $this->normalizeExcerpt(
                             $hydrated['entryContent']
@@ -211,11 +212,18 @@ final class JournalRepository
         $metadata['tags'] = $tags;
         unset($metadata['category']);
 
+        $title = $this->normalizeNullableString(
+            $metadata['title'] ?? null
+        ) ?? '';
+
+        $metadata['title'] = $title;
+
         return [
             'id' => (string) $entry->getId(),
             'uid' => (string) $entry->getUid(),
             'entryDate' => (string) $entry->getEntryDate(),
             'entryContent' => $content,
+            'title' => $title,
             'metadata' => $metadata,
             'categories' => $categories,
             'tags' => $tags,

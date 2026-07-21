@@ -1,0 +1,30 @@
+.link-notice {
+	margin: 8px 16px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
+	font-size: 14px;
+}
+
+.link-notice__actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.link-notice__date {
+	min-height: 36px;
+	padding: 4px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	background: var(--color-main-background);
+	color: var(--color-main-text);
+}
+
+.link-notice__actions button {
+	min-height: 36px;
+}

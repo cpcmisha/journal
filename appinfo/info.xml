@@ -1,54 +1,78 @@
 <?xml version="1.0"?>
-<info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>journalnotes</id>
     <name>Journal</name>
-    <summary>A Markdown journal and personal knowledge workspace for Nextcloud</summary>
+
+    <summary>A private Markdown journal and personal knowledge workspace</summary>
+
     <description><![CDATA[
-Journal is a private Markdown journal and personal knowledge workspace for Nextcloud.
+Journal is a private daily journal and lightweight personal knowledge
+workspace for Nextcloud.
+
+Write one entry per day using Nextcloud Text, organize notes with categories
+and native Nextcloud System Tags, connect ideas through wikilinks, search
+your journal and export entries to Markdown or PDF.
 
 Features:
+
 - Daily entries organized by date
-- Native Markdown files stored in Nextcloud
-- YAML Front Matter
+- Native Markdown storage
+- YAML Front Matter metadata
+- Rich-text editing powered by Nextcloud Text
 - Multiple categories
-- Nextcloud System Tags
-- Full-text search across content, dates, categories, tags and wikilinks
-- Nextcloud Text editor
-- PDF and Markdown export
+- Native Nextcloud System Tags
+- Full-text search
+- Wikilinks and note relations
+- Incoming and outgoing links
+- Markdown export
+- Individual and combined PDF export
+- Native Nextcloud Dashboard widget
+- Responsive desktop, tablet and mobile interface
 - English, Spanish and German translations
 
-Your content remains accessible as regular Markdown files inside your Nextcloud storage.
+Journal keeps your content as regular Markdown files inside your own
+Nextcloud storage.
 ]]></description>
-    <version>1.0.0</version>
+
+    <version>0.2.0</version>
     <licence>AGPL-3.0-or-later</licence>
-    <author mail="miguel@misha.pe" homepage="https://miguel.pe/">Miguel Torres</author>
+
+    <author mail="miguel@misha.pe"
+            homepage="https://miguel.pe/">Miguel Torres</author>
+
     <namespace>JournalNotes</namespace>
+
     <category>office</category>
-    <category>tools</category>
-<website>https://github.com/cpcmisha/journal</website>
+
+    <website>https://github.com/cpcmisha/journal</website>
     <bugs>https://github.com/cpcmisha/journal/issues</bugs>
     <repository type="git">https://github.com/cpcmisha/journal.git</repository>
+
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/01-main-view.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/05-dashboard-widget.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/06-editor.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/02-search.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/03-categories-tags.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/04-markdown-storage.png</screenshot>
-<dependencies>
-        <php min-version="8.2" max-version="8.4" />
+
+    <dependencies>
+        <php min-version="8.2" max-version="8.6"/>
         <nextcloud min-version="34" max-version="34"/>
     </dependencies>
-    
+
     <commands>
-            <command>OCA\JournalNotes\Command\MigrateMarkdownCommand</command>
-            <command>OCA\JournalNotes\Command\MigrateFrontMatterCommand</command>
-            <command>OCA\JournalNotes\Command\RenameRootFolderCommand</command>
-        </commands>
-<navigations>
+        <command>OCA\JournalNotes\Command\MigrateMarkdownCommand</command>
+        <command>OCA\JournalNotes\Command\MigrateFrontMatterCommand</command>
+        <command>OCA\JournalNotes\Command\RenameRootFolderCommand</command>
+    </commands>
+
+    <navigations>
         <navigation>
             <id>journalnotes</id>
             <name>Journal</name>
             <route>journalnotes.page.index</route>
-            <icon>app.svg</icon>
+            <icon>journal.svg</icon>
         </navigation>
     </navigations>
 </info>

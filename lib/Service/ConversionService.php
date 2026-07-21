@@ -2,9 +2,9 @@
 
 namespace OCA\JournalNotes\Service;
 
-use Dompdf\Dompdf;
-use iio\libmergepdf\Merger;
-use League\CommonMark\CommonMarkConverter;
+use OCA\JournalNotes\Vendor\Dompdf\Dompdf;
+use OCA\JournalNotes\Vendor\iio\libmergepdf\Merger;
+use OCA\JournalNotes\Vendor\League\CommonMark\CommonMarkConverter;
 use OCA\JournalNotes\Db\Entry;
 
 /**

@@ -1,0 +1,36 @@
+.dates-navigation {
+	flex: 0 0 300px;
+	width: 300px;
+}
+
+.navigation-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 12px;
+}
+
+.native-date-picker {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.open-calendar {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: 14px;
+}
+
+.export {
+	padding: 12px;
+}
+
+@media (max-width: 1050px) {
+	.dates-navigation {
+		flex-basis: 270px;
+		width: 270px;
+	}
+}

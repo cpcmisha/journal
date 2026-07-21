@@ -49,6 +49,9 @@ final class FrontMatterService
             '---',
             'journal_version: '.(int) ($metadata['journal_version'] ?? 1),
             'date: '.$this->quote((string) ($metadata['date'] ?? '')),
+            'title: '.$this->quote(
+                $this->normalizeTitle($metadata['title'] ?? '')
+            ),
             'categories:',
         ];
 
@@ -92,6 +95,9 @@ final class FrontMatterService
         return [
             'journal_version' => 1,
             'date' => $date,
+            'title' => $this->normalizeTitle(
+                $merged['title'] ?? ''
+            ),
             'categories' => $this->normalizeCategories(
                 $merged['categories'] ?? []
             ),
@@ -247,6 +253,23 @@ final class FrontMatterService
         }
 
         return $value;
+    }
+
+    private function normalizeTitle(mixed $value): string
+    {
+        $value = preg_replace(
+            '/\s+/u',
+            ' ',
+            trim((string) $value)
+        ) ?? trim((string) $value);
+
+        return mb_strimwidth(
+            $value,
+            0,
+            180,
+            '',
+            'UTF-8'
+        );
     }
 
     private function normalizeDateValue(

@@ -1,7 +1,13 @@
 <template>
 	<div id="diary-editor">
 		<div id="entry-title">
-			<span>{{ unsavedMarker }}{{ title }}</span>
+			<div class="entry-date-heading">
+				<strong>
+					{{ unsavedMarker }}{{ dateLabel }}
+				</strong>
+
+				<span>{{ weekdayLabel }}</span>
+			</div>
 
 			<span v-if="status === 'saving'" class="save-status">
 				Guardando…
@@ -11,6 +17,27 @@
 				{{ t('journalnotes', 'Could not save') }}
 			</span>
 		</div>
+
+		<LinkNotice
+			:message="linkNotice"
+			:pending-title="pendingLinkedTitle"
+			:date="linkedNoteDate"
+			:today="today"
+			:creating="creatingLinkedNote"
+			@update:date="linkedNoteDate = $event"
+			@create="createLinkedNote"
+			@cancel="dismissLinkNotice" />
+
+		<WikiAutocomplete
+			:visible="wikiAutocompleteOpen"
+			:query="wikiAutocompleteQuery"
+			:loading="wikiAutocompleteLoading"
+			:suggestions="wikiAutocompleteSuggestions"
+			:selected-index="wikiAutocompleteIndex"
+			:format-date="formatWikiSuggestionDate"
+			:clean-excerpt="cleanWikiSuggestionExcerpt"
+			@select="selectWikiSuggestion"
+			@create="showCreateLinkedNote" />
 
 		<!-- La clave obliga a Vue a crear un contenedor nuevo por fecha. -->
 		<div
@@ -34,12 +61,33 @@
 
 <script>
 import { markRaw } from 'vue'
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import moment from '@nextcloud/moment'
+
+import LinkNotice from './components/Editor/LinkNotice'
+import WikiAutocomplete from './components/Editor/WikiAutocomplete'
+
+import {
+	entryHasContent,
+	getEntry,
+	saveEntry,
+} from './services/entries'
+
+import { resolveLinkedNote } from './editor/linkedNotes'
+import {
+	applyWikiLinkState,
+	buildWikiLinkTooltip,
+	getWikiLinkClass,
+	getWikiLinkTitle,
+	groupWikiLinksByTitle,
+} from './editor/wikiLinks'
 
 export default {
 	name: 'Editor',
+
+	components: {
+		LinkNotice,
+		WikiAutocomplete,
+	},
 
 	props: {
 		date: {
@@ -61,13 +109,32 @@ export default {
 			saveArmed: false,
 			loadSequence: 0,
 			editorKey: 0,
+			editorClickHandler: null,
+			linkNotice: '',
+			linkNoticeTimeout: null,
+			pendingLinkedTitle: '',
+			linkedNoteDate: moment().format('YYYY-MM-DD'),
+			creatingLinkedNote: false,
+			wikiLinkStateRequestId: 0,
+			wikiAutocompleteOpen: false,
+			wikiAutocompleteQuery: '',
+			wikiAutocompleteSuggestions: [],
+			wikiAutocompleteIndex: 0,
+			wikiAutocompleteLoading: false,
 		}
 	},
 
 	computed: {
-		title() {
-			const day = moment(this.date)
-			return `${day.format('dddd')} - ${day.format('LL')}`
+		today() {
+			return moment().format('YYYY-MM-DD')
+		},
+
+		dateLabel() {
+			return moment(this.date).format('LL')
+		},
+
+		weekdayLabel() {
+			return moment(this.date).format('dddd')
 		},
 
 		unsavedMarker() {
@@ -98,10 +165,15 @@ export default {
 
 	beforeUnmount() {
 		clearTimeout(this.saveTimeout)
+		clearTimeout(this.linkNoticeTimeout)
 		this.destroyEditor()
 	},
 
 	methods: {
+		/**
+		 * Aplica una plantilla a la entrada actual y la guarda.
+		 * Journal.vue puede invocarlo mediante this.$refs.editor.
+		 */
 		async loadEntry(entryDate) {
 			const sequence = ++this.loadSequence
 
@@ -110,19 +182,19 @@ export default {
 			this.saveArmed = false
 			this.unsavedChanges = false
 			this.status = 'loading'
+			this.dismissLinkNotice()
+			this.linkedNoteDate = this.today
 
 			await this.destroyEditor()
 
 			try {
-				const response = await axios.get(
-					generateUrl(`apps/journalnotes/entry/${entryDate}`),
-				)
+				const entry = await getEntry(entryDate)
 
 				if (sequence !== this.loadSequence) {
 					return
 				}
 
-				this.content = response.data.entryContent || ''
+				this.content = entry.entryContent || ''
 
 				/*
 				 * Fuerza un elemento DOM nuevo para cada fecha.
@@ -166,6 +238,7 @@ export default {
 					readOnly: false,
 
 					onUpdate: (update) => {
+
 						if (
 							this.isSettingContent
 							|| !this.saveArmed
@@ -200,6 +273,16 @@ export default {
 				 */
 				this.editor = markRaw(editor)
 
+				this.editorClickHandler = event => {
+					this.handleEditorClick(event)
+				}
+
+				element.addEventListener(
+					'pointerdown',
+					this.editorClickHandler,
+					true,
+				)
+
 				const finishLoading = () => {
 					if (sequence !== this.loadSequence) {
 						return
@@ -207,6 +290,12 @@ export default {
 
 					this.isSettingContent = false
 					this.status = 'loaded'
+
+					window.setTimeout(() => {
+						if (sequence === this.loadSequence) {
+							this.refreshWikiLinkStates()
+						}
+					}, 100)
 
 					/*
 					 * Text emite transacciones internas durante la carga.
@@ -235,6 +324,335 @@ export default {
 			}
 		},
 
+		async refreshWikiLinkStates() {
+			const container = this.$refs.textEditor
+
+			if (!container) {
+				return
+			}
+
+			const links = Array.from(
+				container.querySelectorAll('a[iswikilink]'),
+			)
+
+			if (links.length === 0) {
+				return
+			}
+
+			const requestId = ++this.wikiLinkStateRequestId
+
+			for (const link of links) {
+				link.classList.remove(
+					'journal-wikilink--found',
+					'journal-wikilink--missing',
+					'journal-wikilink--multiple',
+				)
+
+				link.classList.add('journal-wikilink--checking')
+			}
+
+			const linksByTitle = groupWikiLinksByTitle(links)
+
+			await Promise.all(
+				Array.from(linksByTitle.entries()).map(
+					async ([title, titleLinks]) => {
+						let status = 'not_found'
+						let matches = []
+
+						try {
+							const data = await resolveLinkedNote(title)
+
+							status = data.status
+							matches = data.matches
+						} catch (error) {
+							// eslint-disable-next-line no-console
+							console.error(
+								t(
+									'journalnotes',
+									'Could not resolve the linked note',
+								),
+								error,
+							)
+						}
+
+						if (
+							requestId !== this.wikiLinkStateRequestId
+							|| !this.$refs.textEditor
+						) {
+							return
+						}
+
+						const className = getWikiLinkClass(status)
+
+						const tooltip = buildWikiLinkTooltip({
+							status,
+							matches,
+							title,
+							formatDate: date =>
+								moment(date).format('LL'),
+							labels: {
+								multiple: t(
+									'journalnotes',
+									'Several notes use this title',
+								),
+								create: t(
+									'journalnotes',
+									'Create note',
+								),
+							},
+						})
+
+						for (const link of titleLinks) {
+							applyWikiLinkState(link, {
+								status,
+								className,
+								tooltip,
+							})
+						}
+					},
+				),
+			)
+		},
+
+		async handleEditorClick(event) {
+			const link = event.target?.closest?.('a')
+
+			if (
+				event.button !== undefined
+				&& event.button !== 0
+			) {
+				return
+			}
+
+			if (!link || !this.$refs.textEditor?.contains(link)) {
+				return
+			}
+
+			/*
+			 * Los enlaces externos deben conservar el comportamiento
+			 * normal de Nextcloud Text y del navegador, aunque el editor
+			 * les haya asignado accidentalmente iswikilink.
+			 */
+			const href = String(
+				link.getAttribute('href') || '',
+			).trim()
+
+			const markdownHref = String(
+				link.getAttribute('data-md-href') || '',
+			).trim()
+
+			const isExternalLink = /^(?:https?:|mailto:|tel:|ftp:)/i
+				.test(href)
+				|| /^(?:https?:|mailto:|tel:|ftp:)/i
+					.test(markdownHref)
+				|| href.startsWith('//')
+				|| markdownHref.startsWith('//')
+
+			if (isExternalLink) {
+				return
+			}
+
+			const isWikiLink = link.getAttribute('iswikilink') === 'true'
+
+			if (!isWikiLink) {
+				return
+			}
+
+			/*
+			 * Nextcloud Text guarda el título original del wikilink
+			 * en data-md-href. El atributo href puede ser relativo.
+			 */
+			const linkedTitle = getWikiLinkTitle(link)
+
+			if (!linkedTitle) {
+				return
+			}
+
+			/*
+			 * Debemos detener el clic antes de que Nextcloud Text abra
+			 * su ventana flotante de enlaces.
+			 */
+			event.preventDefault()
+			event.stopPropagation()
+			event.stopImmediatePropagation?.()
+
+			try {
+				const data = await resolveLinkedNote(linkedTitle)
+				const matches = data.matches
+
+				if (
+					data.status === 'found'
+					&& matches.length === 1
+					&& matches[0]?.date
+				) {
+					const targetDate = matches[0].date
+
+					/*
+					 * Una autorreferencia no necesita recargar la entrada.
+					 */
+					if (targetDate === this.date) {
+						this.showJournalNotice(
+							t(
+								'journalnotes',
+								'You are already viewing this note.',
+							),
+						)
+						return
+					}
+
+					await this.$router.push({
+						name: 'date',
+						params: {
+							date: targetDate,
+						},
+					})
+					return
+				}
+
+				if (data.status === 'multiple') {
+					this.showJournalNotice(
+						t(
+							'journalnotes',
+							'Several notes use this title. Select a date from Relations.',
+						),
+					)
+					return
+				}
+
+				this.showCreateLinkedNote(linkedTitle)
+			} catch (error) {
+				// eslint-disable-next-line no-console
+				console.error(
+					t(
+						'journalnotes',
+						'Could not resolve the linked note',
+					),
+					error,
+				)
+
+				this.showJournalNotice(
+					t(
+						'journalnotes',
+						'Could not open the linked note.',
+					),
+				)
+			}
+		},
+
+		showCreateLinkedNote(title) {
+			const linkedTitle = String(title || '').trim()
+
+			if (!linkedTitle) {
+				return
+			}
+
+			this.pendingLinkedTitle = linkedTitle
+			this.linkedNoteDate = this.today
+
+			this.showJournalNotice(
+				t(
+					'journalnotes',
+					'This linked note has not been created yet.',
+				),
+				false,
+			)
+		},
+
+		showJournalNotice(message, autoHide = true) {
+			clearTimeout(this.linkNoticeTimeout)
+
+			this.linkNotice = String(message || '')
+
+			if (!autoHide) {
+				this.linkNoticeTimeout = null
+				return
+			}
+
+			this.linkNoticeTimeout = window.setTimeout(() => {
+				this.dismissLinkNotice()
+			}, 5000)
+		},
+
+		dismissLinkNotice() {
+			clearTimeout(this.linkNoticeTimeout)
+
+			this.linkNotice = ''
+			this.linkNoticeTimeout = null
+			this.pendingLinkedTitle = ''
+			this.creatingLinkedNote = false
+		},
+
+		async createLinkedNote() {
+			const title = this.pendingLinkedTitle.trim()
+			const date = this.linkedNoteDate
+
+			if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+				this.showJournalNotice(
+					t('journalnotes', 'Select a valid date.'),
+					false,
+				)
+				return
+			}
+
+			this.creatingLinkedNote = true
+
+			try {
+				/*
+				 * Journal solo admite una entrada por fecha.
+				 * Comprobamos que no exista contenido para evitar sobrescribirla.
+				 */
+				const dateAlreadyUsed = await entryHasContent(date)
+
+				if (dateAlreadyUsed) {
+					this.creatingLinkedNote = false
+					this.showJournalNotice(
+						t(
+							'journalnotes',
+							'This date already contains an entry. Choose another date.',
+						),
+						false,
+					)
+					return
+				}
+
+				const initialContent = `# ${title}\n\n`
+				const metadata = {
+					title,
+					categories: [],
+					tags: [],
+				}
+
+				await saveEntry(
+					date,
+					initialContent,
+					metadata,
+				)
+
+				this.dismissLinkNotice()
+
+				await this.$router.push({
+					name: 'date',
+					params: { date },
+				})
+			} catch (error) {
+				this.creatingLinkedNote = false
+
+				// eslint-disable-next-line no-console
+				console.error(
+					t('journalnotes', 'Could not create the linked note'),
+					error,
+				)
+
+				this.showJournalNotice(
+					t(
+						'journalnotes',
+						'Could not create the linked note.',
+					),
+					false,
+				)
+			}
+		},
+
 		handleUpdate(entryDate, markdown) {
 			this.content = markdown
 			this.unsavedChanges = true
@@ -244,7 +662,7 @@ export default {
 
 			this.saveTimeout = setTimeout(() => {
 				this.saveEntry(entryDate, markdown)
-			}, 700)
+			}, 1800)
 		},
 
 		async saveEntry(entryDate, markdown) {
@@ -256,9 +674,9 @@ export default {
 			this.status = 'saving'
 
 			try {
-				const response = await axios.put(
-					generateUrl(`apps/journalnotes/entry/${entryDate}`),
-					{ content: markdown },
+				const response = await saveEntry(
+					entryDate,
+					markdown,
 				)
 
 				/*
@@ -276,9 +694,9 @@ export default {
 				this.$emit(
 					'entry-edit',
 					entryDate,
-					response.data.isEmpty
+					response.isEmpty
 						? false
-						: response.data.entryContent,
+						: response.entryContent,
 				)
 			} catch (error) {
 				// eslint-disable-next-line no-console
@@ -296,8 +714,21 @@ export default {
 
 		async destroyEditor() {
 			this.saveArmed = false
+			this.wikiLinkStateRequestId++
 			clearTimeout(this.saveTimeout)
 			this.saveTimeout = null
+
+			const element = this.$refs.textEditor
+
+			if (element && this.editorClickHandler) {
+				element.removeEventListener(
+					'pointerdown',
+					this.editorClickHandler,
+					true,
+				)
+			}
+
+			this.editorClickHandler = null
 
 			const oldEditor = this.editor
 			this.editor = null
@@ -316,8 +747,6 @@ export default {
 					)
 				}
 			}
-
-			const element = this.$refs.textEditor
 
 			if (element) {
 				element.replaceChildren()
@@ -339,11 +768,34 @@ export default {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		min-height: 54px;
-		padding: 14px 28px;
-		font-size: 18px;
-		font-weight: 700;
+		min-height: 62px;
+		padding: 10px 28px;
 		border-bottom: 1px solid var(--color-border);
+		box-sizing: border-box;
+	}
+
+	.entry-date-heading {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: 2px;
+
+		strong {
+			overflow: hidden;
+			font-size: 18px;
+			font-weight: 700;
+			line-height: 1.25;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		span {
+			color: var(--color-text-maxcontrast);
+			font-size: 13px;
+			font-weight: 500;
+			line-height: 1.2;
+			text-transform: capitalize;
+		}
 	}
 
 	.save-status {
@@ -359,7 +811,7 @@ export default {
 	.text-editor {
 		width: 100%;
 		min-width: 0;
-		height: calc(100% - 54px);
+		height: calc(100% - 62px);
 		min-height: 65vh;
 		box-sizing: border-box;
 	}
@@ -375,7 +827,7 @@ export default {
 	#overlay {
 		display: flex;
 		position: absolute;
-		inset: 54px 0 0;
+		inset: 62px 0 0;
 		z-index: 100;
 		align-items: center;
 		justify-content: center;
@@ -444,6 +896,59 @@ export default {
 #diary-editor .text-editor .ProseMirror {
 	padding-right: 40px !important;
 	padding-left: 40px !important;
+}
+
+.text-editor a[iswikilink] {
+	text-underline-offset: 3px;
+	transition:
+		color 120ms ease,
+		text-decoration-color 120ms ease;
+}
+
+.text-editor a.journal-wikilink--checking {
+	opacity: 0.75;
+}
+
+.text-editor a.journal-wikilink--found {
+	color: var(--color-primary-element);
+	text-decoration-style: solid;
+	cursor: pointer;
+}
+
+.text-editor a.journal-wikilink--missing {
+	color: var(--color-text-maxcontrast);
+	text-decoration-line: underline;
+	text-decoration-style: dashed;
+	text-decoration-color: var(--color-text-maxcontrast);
+	cursor: pointer;
+}
+
+.text-editor a.journal-wikilink--multiple {
+	color: var(--color-warning-text);
+	text-decoration-line: underline;
+	text-decoration-style: double;
+	text-decoration-color: var(--color-warning);
+	cursor: pointer;
+}
+
+
+/* Wikilinks: resaltado sencillo al pasar el cursor. */
+#diary-editor .text-editor a[iswikilink] {
+	padding: 1px 4px;
+	border-radius: var(--border-radius);
+	text-decoration: none;
+	transition: background-color 120ms ease;
+}
+
+#diary-editor .text-editor a[iswikilink]:hover,
+#diary-editor .text-editor a[iswikilink]:focus-visible {
+	background: var(--color-primary-element-light);
+	text-decoration: none;
+}
+
+#diary-editor .text-editor a[iswikilink]:focus-visible {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: 1px;
 }
 
 </style>

@@ -5,68 +5,29 @@
 	role="img"
 	aria-labelledby="title description">
 	<title id="title">Journal</title>
-	<desc id="description">A journal book with a writing feather</desc>
+	<desc id="description">A journal notebook with a pencil</desc>
 
-	<defs>
-		<linearGradient id="bookGradient" x1="18" y1="12" x2="94" y2="112">
-			<stop offset="0" stop-color="#244b78"/>
-			<stop offset="1" stop-color="#102e52"/>
-		</linearGradient>
-
-		<linearGradient id="featherGradient" x1="88" y1="36" x2="112" y2="102">
-			<stop offset="0" stop-color="#2eb5b0"/>
-			<stop offset="1" stop-color="#158b91"/>
-		</linearGradient>
-	</defs>
-
-	<!-- Book -->
-	<path
-		d="M20 14h65c8 0 14 6 14 14v70c0 9-7 16-16 16H28c-10 0-18-8-18-18V24c0-6 4-10 10-10z"
-		fill="url(#bookGradient)"/>
-
-	<!-- Spine -->
-	<path
-		d="M28 14v82"
+	<g
 		fill="none"
 		stroke="#ffffff"
-		stroke-width="5"
+		stroke-width="10"
 		stroke-linecap="round"
-		opacity=".95"/>
+		stroke-linejoin="round">
 
-	<!-- Pages -->
-	<path
-		d="M21 94h67c7 0 11 4 11 10s-4 10-11 10H27c-9 0-15-5-15-11s4-9 9-9z"
-		fill="#ffffff"/>
+		<!-- Notebook -->
+		<path d="M28 18h58a10 10 0 0 1 10 10v42" />
+		<path d="M28 18v92" />
+		<path d="M28 110h54" />
+		<path d="M18 28v72a10 10 0 0 0 10 10" />
 
-	<path
-		d="M30 101h56M30 108h51"
-		fill="none"
-		stroke="#17385e"
-		stroke-width="3"
-		stroke-linecap="round"/>
+		<!-- Writing lines -->
+		<path d="M46 42h32" />
+		<path d="M46 62h25" />
+		<path d="M46 82h16" />
 
-	<!-- Letter J -->
-	<path
-		d="M54 35h27v6h-7v30c0 14-7 22-19 22-8 0-14-4-16-11l8-4c2 5 4 7 8 7 5 0 8-4 8-12V41h-9z"
-		fill="#ffffff"/>
-
-	<!-- Bookmark -->
-	<path
-		d="M29 94h17v27l-8.5-6-8.5 6z"
-		fill="#20a99f"/>
-
-	<!-- Feather -->
-	<path
-		d="M88 94c4-25 12-49 30-63 2 25-8 48-30 63z"
-		fill="url(#featherGradient)"
-		stroke="#ffffff"
-		stroke-width="3"
-		stroke-linejoin="round"/>
-
-	<path
-		d="M88 103c4-24 12-44 27-65M98 68l14-7M94 79l13-5"
-		fill="none"
-		stroke="#ffffff"
-		stroke-width="3"
-		stroke-linecap="round"/>
+		<!-- Pencil -->
+		<path d="M70 96l8-22 24-24 14 14-24 24z" />
+		<path d="M78 74l14 14" />
+		<path d="M70 96l22-8" />
+	</g>
 </svg>

@@ -8,11 +8,18 @@ vendor/
 *.bak
 *.orig
 *.before-*
-
 .DS_Store
 .idea/
 .vscode/
-
 appinfo/signature.json
-
 /screenshots/*.tmp
+# Local release builds
+/build/
+# Temporary files
+__pycache__/
+*.pyc
+*.bak-*
+*.tmp
+
+# Generated release packages
+/dist/
