@@ -52,6 +52,9 @@ require_command grep
 [[ -x "$ROOT_DIR/tools/build-scoped-vendor.sh" ]] \
 	|| fail "tools/build-scoped-vendor.sh no existe o no es ejecutable"
 
+[[ -x "$ROOT_DIR/tools/sign-release.sh" ]] \
+	|| fail "tools/sign-release.sh no existe o no es ejecutable"
+
 VERSION="$(
 	python3 - "$INFO_XML" <<'PY'
 import sys
@@ -227,6 +230,7 @@ INCLUDE_PATHS=(
 	img
 	js
 	l10n
+        screenshots
 	lib
 	templates
 	vendor-scoped
@@ -295,6 +299,13 @@ while IFS= read -r -d '' file; do
 done < <(
 	find "$STAGING_APP" -type f -name '*.php' -print0
 )
+
+log "Firmando la aplicación"
+"$ROOT_DIR/tools/sign-release.sh" "$STAGING_APP"
+
+log "Verificando la firma generada"
+[[ -s "$STAGING_APP/appinfo/signature.json" ]] \
+    || fail "No se generó appinfo/signature.json"
 
 log "Creando archivo tar.gz"
 tar \
