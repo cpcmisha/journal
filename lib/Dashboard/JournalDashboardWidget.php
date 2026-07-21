@@ -137,7 +137,11 @@ final class JournalDashboardWidget implements
             $this->l10n->t(
                 'You have not written any Journal entries yet.'
             ),
-            ''
+            $todayEntry === null
+                ? $this->l10n->t(
+                    'You have not written today yet.'
+                )
+                : ''
         );
     }
 
@@ -153,6 +157,13 @@ final class JournalDashboardWidget implements
                 WidgetButton::TYPE_NEW,
                 $this->buildEntryUrl($today),
                 $this->l10n->t('Write today')
+            ),
+            new WidgetButton(
+                WidgetButton::TYPE_MORE,
+                $this->urlGenerator->linkToRouteAbsolute(
+                    'journalnotes.page.index'
+                ),
+                $this->l10n->t('Open Journal')
             ),
         ];
     }
