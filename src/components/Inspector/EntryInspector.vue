@@ -16,9 +16,7 @@
 					'Close note information',
 				)"
 				@click="$emit('close')">
-				<span
-					class="icon-close"
-					aria-hidden="true" />
+				<Close :size="20" />
 			</NcButton>
 
 			<span
@@ -109,6 +107,7 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
+import Close from 'vue-material-design-icons/Close.vue'
 
 import InspectorCategories from './InspectorCategories'
 import InspectorRelations from './InspectorRelations'
@@ -119,6 +118,7 @@ export default {
 	name: 'EntryInspector',
 
 	components: {
+		Close,
 		InspectorCategories,
 		InspectorRelations,
 		InspectorTags,

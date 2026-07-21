@@ -15,9 +15,7 @@
 					'Close Explore panel',
 				)"
 				@click="$emit('close')">
-				<span
-					class="icon-close"
-					aria-hidden="true" />
+				<Close :size="20" />
 			</NcButton>
 		</div>
 
@@ -138,11 +136,13 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
+import Close from 'vue-material-design-icons/Close.vue'
 
 export default {
 	name: 'ExplorePanel',
 
 	components: {
+		Close,
 		NcButton,
 	},
 

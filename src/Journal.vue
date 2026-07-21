@@ -87,9 +87,7 @@
 							class="responsive-panel-close"
 							:aria-label="t('journalnotes', 'Close note information')"
 							@click="closeResponsivePanels">
-							<span
-								class="icon-close"
-								aria-hidden="true" />
+							<Close :size="20" />
 						</NcButton>
 
 						<span
@@ -379,6 +377,8 @@ import {
 	NcContent,
 } from '@nextcloud/vue'
 
+import Close from 'vue-material-design-icons/Close.vue'
+
 import moment from '@nextcloud/moment'
 import { generateUrl } from '@nextcloud/router'
 
@@ -411,6 +411,7 @@ export default {
 	name: 'Journal',
 
 	components: {
+		Close,
 		DatesNavigation,
 		Editor,
 		ExplorePanel,
@@ -1335,10 +1336,9 @@ export default {
 	}
 
 	@media (max-width: 1050px) {
-		.journal-workspace {
-			grid-template-columns:
-				minmax(0, 1fr)
-				280px;
+		.journal-workspace,
+		.journal-workspace--welcome {
+			grid-template-columns: minmax(0, 1fr);
 			padding-top: 48px;
 		}
 
@@ -1360,6 +1360,22 @@ export default {
 		.responsive-panel-backdrop {
 			transition: none;
 		}
+	}
+}
+
+
+@media (max-width: 1050px) {
+	.responsive-panel-toolbar {
+		padding-left: 10px;
+	}
+
+	.responsive-panel-button:first-child {
+		margin-left: 64px;
+		padding-left: 12px;
+	}
+
+	.responsive-panel-button:first-child .icon-menu {
+		display: none;
 	}
 }
 

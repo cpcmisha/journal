@@ -261,14 +261,14 @@
 	font-size: 11px;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1050px) {
 	.inspector-panel {
 		position: absolute;
 		top: 0;
 		right: 0;
 		bottom: 0;
 		z-index: 500;
-		width: min(320px, 88vw);
+		width: min(360px, 92vw);
 		transform: translateX(105%);
 		box-shadow: -6px 0 24px rgb(0 0 0 / 20%);
 		transition: transform 160ms ease;

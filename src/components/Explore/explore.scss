@@ -170,3 +170,9 @@
 .filter-chip.active span {
 	color: inherit;
 }
+
+@media (max-width: 1050px) {
+	.organizer-header {
+		padding-left: 52px;
+	}
+}
