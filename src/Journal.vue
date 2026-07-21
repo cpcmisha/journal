@@ -464,6 +464,7 @@ export default {
 			},
 			relationsStatus: null,
 			relationsRequestId: 0,
+			lastWikiLinksSignature: '',
 
 			categorySuggestions: [
 				t('journalnotes', 'Personal'),
@@ -817,6 +818,11 @@ export default {
 				this.currentEntryContent
 					= entry.entryContent || ''
 
+				this.lastWikiLinksSignature
+					= this.getWikiLinksSignature(
+						this.currentEntryContent,
+					)
+
 				const metadata = normalizeEntryMetadata(
 					entry.metadata,
 				)
@@ -828,6 +834,7 @@ export default {
 				await this.fetchRelations(this.date)
 			} catch (error) {
 				this.currentEntryContent = ''
+				this.lastWikiLinksSignature = ''
 				this.noteTitle = ''
 				this.categories = []
 				this.categoryInput = ''
@@ -841,7 +848,10 @@ export default {
 			}
 		},
 
-		async fetchRelations(entryDate = this.date) {
+		async fetchRelations(
+			entryDate = this.date,
+			silent = false,
+		) {
 			const requestId = ++this.relationsRequestId
 
 			if (!entryDate) {
@@ -853,7 +863,9 @@ export default {
 				return
 			}
 
-			this.relationsStatus = 'loading'
+			if (!silent) {
+				this.relationsStatus = 'loading'
+			}
 
 			try {
 				const relations = await getRelations(
@@ -876,11 +888,13 @@ export default {
 					return
 				}
 
-				this.relations = {
-					outgoing: [],
-					incoming: [],
+				if (!silent) {
+					this.relations = {
+						outgoing: [],
+						incoming: [],
+					}
+					this.relationsStatus = 'error'
 				}
-				this.relationsStatus = 'error'
 
 				// eslint-disable-next-line no-console
 				console.error(
@@ -890,28 +904,53 @@ export default {
 			}
 		},
 
-		async onEdit(entryDate, content) {
+		getWikiLinksSignature(content) {
+			const matches = String(content || '')
+				.match(/\[\[[^\]\n]+\]\]/g) || []
+
+			return matches
+				.map(link => link.trim().toLowerCase())
+				.sort()
+				.join('\n')
+		},
+
+		onEdit(entryDate, content) {
+			const normalizedContent = content || ''
+
 			if (entryDate === this.date) {
-				this.currentEntryContent = content || ''
+				this.currentEntryContent = normalizedContent
 			}
 
 			const entryIndex = this.lastEntries.findIndex(
 				entry => entry.date === entryDate,
 			)
 
-			if (!content) {
+			if (!normalizedContent) {
 				if (entryIndex !== -1) {
 					this.lastEntries.splice(entryIndex, 1)
 				}
 
 				if (entryDate === this.date) {
-					await this.fetchRelations(entryDate)
+					const nextSignature = ''
+
+					if (
+						nextSignature
+							!== this.lastWikiLinksSignature
+					) {
+						this.lastWikiLinksSignature
+							= nextSignature
+
+						void this.fetchRelations(
+							entryDate,
+							true,
+						)
+					}
 				}
 
 				return
 			}
 
-			const excerpt = content
+			const excerpt = normalizedContent
 				.replace(/\s+/g, ' ')
 				.trim()
 				.substring(0, 40)
@@ -925,13 +964,26 @@ export default {
 				this.lastEntries[entryIndex].excerpt = excerpt
 			}
 
-			/*
-			 * El backend ya guardó el Markdown. Volvemos a consultar
-			 * Relaciones para reflejar nuevos wikilinks sin recargar.
-			 */
-			if (entryDate === this.date) {
-				await this.fetchRelations(entryDate)
+			if (entryDate !== this.date) {
+				return
 			}
+
+			const nextSignature = this.getWikiLinksSignature(
+				normalizedContent,
+			)
+
+			if (nextSignature === this.lastWikiLinksSignature) {
+				return
+			}
+
+			this.lastWikiLinksSignature = nextSignature
+
+			/*
+			 * Actualizamos las relaciones en segundo plano únicamente
+			 * cuando cambian los wikilinks. El inspector conserva su
+			 * contenido mientras llega la nueva respuesta.
+			 */
+			void this.fetchRelations(entryDate, true)
 		},
 
 		openOutgoingRelation(relation) {

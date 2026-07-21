@@ -662,7 +662,7 @@ export default {
 
 			this.saveTimeout = setTimeout(() => {
 				this.saveEntry(entryDate, markdown)
-			}, 700)
+			}, 1800)
 		},
 
 		async saveEntry(entryDate, markdown) {
