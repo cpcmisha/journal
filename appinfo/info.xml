@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
     <id>journalnotes</id>
-    <name>Misha Journal</name>
+    <name>Journal</name>
     <summary>A Markdown journal and personal knowledge workspace for Nextcloud</summary>
     <description><![CDATA[
 Journal is a private Markdown journal and personal knowledge workspace for Nextcloud.
@@ -14,39 +14,49 @@ Features:
 - Multiple categories
 - Nextcloud System Tags
 - Full-text search across content, dates, categories, tags and wikilinks
+- Relations between notes
 - Nextcloud Text editor
 - PDF and Markdown export
+- Dashboard widget
+- Responsive desktop, tablet and mobile interface
 - English, Spanish and German translations
 
 Your content remains accessible as regular Markdown files inside your Nextcloud storage.
 ]]></description>
+
     <version>0.2.0</version>
     <licence>AGPL-3.0-or-later</licence>
-    <author mail="miguel@misha.pe" homepage="https://miguel.pe/">Miguel Torres</author>
+
+    <author mail="miguel@misha.pe"
+            homepage="https://miguel.pe/">Miguel Torres</author>
+
     <namespace>JournalNotes</namespace>
     <category>office</category>
-    <category>tools</category>
-<website>https://github.com/cpcmisha/journal</website>
+
+    <website>https://github.com/cpcmisha/journal</website>
     <bugs>https://github.com/cpcmisha/journal/issues</bugs>
     <repository type="git">https://github.com/cpcmisha/journal.git</repository>
+
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/01-main-view.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/02-search.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/03-categories-tags.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/04-markdown-storage.png</screenshot>
-<dependencies>
-        <php min-version="8.2" max-version="8.4" />
+
+    <dependencies>
+        <php min-version="8.2" max-version="8.4"/>
         <nextcloud min-version="34" max-version="34"/>
     </dependencies>
-    
+
     <commands>
-            <command>OCA\JournalNotes\Command\MigrateMarkdownCommand</command>
-            <command>OCA\JournalNotes\Command\MigrateFrontMatterCommand</command>
-            <command>OCA\JournalNotes\Command\RenameRootFolderCommand</command>
-        </commands>
-<navigations>
+        <command>OCA\JournalNotes\Command\MigrateMarkdownCommand</command>
+        <command>OCA\JournalNotes\Command\MigrateFrontMatterCommand</command>
+        <command>OCA\JournalNotes\Command\RenameRootFolderCommand</command>
+    </commands>
+
+    <navigations>
         <navigation>
             <id>journalnotes</id>
-            <name>Misha Journal</name>
+            <name>Journal</name>
             <route>journalnotes.page.index</route>
             <icon>journal.svg</icon>
         </navigation>

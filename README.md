@@ -349,7 +349,7 @@ journalnotes:rename-root-folder
 Renames the storage directory from
 
 ```
-Misha Journal
+Journal
 ```
 
 to
