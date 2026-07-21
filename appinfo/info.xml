@@ -43,7 +43,7 @@ Your content remains accessible as regular Markdown files inside your Nextcloud 
     <screenshot>https://raw.githubusercontent.com/cpcmisha/journal/main/screenshots/04-markdown-storage.png</screenshot>
 
     <dependencies>
-        <php min-version="8.2" max-version="8.4"/>
+        <php min-version="8.2" max-version="8.6"/>
         <nextcloud min-version="34" max-version="34"/>
     </dependencies>
 
